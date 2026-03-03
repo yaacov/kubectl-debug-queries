@@ -18,10 +18,10 @@ spec:
     {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-linux-amd64.tar.gz" .TagName }}
     files:
     - from: kubectl-debug-queries-linux-amd64
-      to: kubectl-debug-queries
+      to: kubectl-debug_queries
     - from: LICENSE
       to: .
-    bin: kubectl-debug-queries
+    bin: kubectl-debug_queries
   - selector:
       matchLabels:
         os: linux
@@ -29,10 +29,10 @@ spec:
     {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-linux-arm64.tar.gz" .TagName }}
     files:
     - from: kubectl-debug-queries-linux-arm64
-      to: kubectl-debug-queries
+      to: kubectl-debug_queries
     - from: LICENSE
       to: .
-    bin: kubectl-debug-queries
+    bin: kubectl-debug_queries
   - selector:
       matchLabels:
         os: darwin
@@ -40,10 +40,10 @@ spec:
     {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-darwin-amd64.tar.gz" .TagName }}
     files:
     - from: kubectl-debug-queries-darwin-amd64
-      to: kubectl-debug-queries
+      to: kubectl-debug_queries
     - from: LICENSE
       to: .
-    bin: kubectl-debug-queries
+    bin: kubectl-debug_queries
   - selector:
       matchLabels:
         os: darwin
@@ -51,10 +51,10 @@ spec:
     {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-darwin-arm64.tar.gz" .TagName }}
     files:
     - from: kubectl-debug-queries-darwin-arm64
-      to: kubectl-debug-queries
+      to: kubectl-debug_queries
     - from: LICENSE
       to: .
-    bin: kubectl-debug-queries
+    bin: kubectl-debug_queries
   - selector:
       matchLabels:
         os: windows
@@ -62,7 +62,7 @@ spec:
     {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-windows-amd64.zip" .TagName }}
     files:
     - from: kubectl-debug-queries-windows-amd64.exe
-      to: kubectl-debug-queries.exe
+      to: kubectl-debug_queries.exe
     - from: LICENSE
       to: .
-    bin: kubectl-debug-queries.exe
+    bin: kubectl-debug_queries.exe
