@@ -6,7 +6,11 @@ import (
 	"strings"
 )
 
-// RenderSmart renders parsed log entries in compact "[LEVEL] HH:MM:SS source: message" format.
+// stageColumnWidth is the fixed width for the stage column in rendered output.
+// Matches the longest stage name ("source-setup" = 12 chars).
+const stageColumnWidth = 12
+
+// RenderSmart renders parsed log entries in compact "[LEVEL] stage source: message" format.
 // Unparseable lines are prefixed with "[    ]".
 func RenderSmart(entries []LogEntry) string {
 	var sb strings.Builder
@@ -18,6 +22,9 @@ func RenderSmart(entries []LogEntry) string {
 			sb.WriteString(renderParsedLine(e))
 		} else {
 			sb.WriteString("[    ] ")
+			if stage := e.Fields["stage"]; stage != "" {
+				sb.WriteString(fmt.Sprintf("%-*s ", stageColumnWidth, stage))
+			}
 			sb.WriteString(e.RawLine)
 		}
 	}
@@ -33,6 +40,11 @@ func renderParsedLine(e LogEntry) string {
 		level = "INFO"
 	}
 	sb.WriteString(fmt.Sprintf("[%-5s] ", level))
+
+	// stage (fixed-width column, only when present)
+	if stage := e.Fields["stage"]; stage != "" {
+		sb.WriteString(fmt.Sprintf("%-*s ", stageColumnWidth, stage))
+	}
 
 	// HH:MM:SS
 	if e.Timestamp != "" {
@@ -57,10 +69,13 @@ func renderParsedLine(e LogEntry) string {
 	// message
 	sb.WriteString(e.Message)
 
-	// extra fields
+	// extra fields (skip "stage" -- already rendered as a column)
 	if len(e.Fields) > 0 {
 		keys := sortedKeys(e.Fields)
 		for _, k := range keys {
+			if k == "stage" {
+				continue
+			}
 			v := e.Fields[k]
 			if v == "" {
 				continue
