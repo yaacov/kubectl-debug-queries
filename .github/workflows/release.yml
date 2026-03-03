@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build Multi-Platform Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check if assets already exist
+        id: check_assets
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          url="https://github.com/yaacov/kubectl-debug-queries/releases/download/${VERSION}/kubectl-debug-queries-${VERSION}-linux-amd64.tar.gz"
+          if curl -sSL --fail -I "$url" > /dev/null 2>&1; then
+            echo "Assets already exist, skipping build and upload"
+            echo "assets_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "Assets do not exist, will build and upload"
+            echo "assets_exist=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        if: steps.check_assets.outputs.assets_exist != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Build multi-platform binaries and archives
+        if: steps.check_assets.outputs.assets_exist != 'true'
+        run: make dist-all
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+
+      - name: Upload release assets
+        if: steps.check_assets.outputs.assets_exist != 'true'
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        with:
+          files: |
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-linux-amd64.tar.gz
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-linux-amd64.tar.gz.sha256sum
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-linux-arm64.tar.gz
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-linux-arm64.tar.gz.sha256sum
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-darwin-amd64.tar.gz
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-darwin-amd64.tar.gz.sha256sum
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-darwin-arm64.tar.gz
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-darwin-arm64.tar.gz.sha256sum
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-windows-amd64.zip
+            kubectl-debug-queries-${{ github.event.release.tag_name }}-windows-amd64.zip.sha256sum
+
+      - name: Wait for assets to be available
+        if: steps.check_assets.outputs.assets_exist != 'true'
+        run: |
+          echo "Waiting 30 seconds for GitHub to propagate release assets..."
+          sleep 30
+
+      - name: Verify all assets are available
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          ASSETS=(
+            "kubectl-debug-queries-${VERSION}-linux-amd64.tar.gz"
+            "kubectl-debug-queries-${VERSION}-linux-arm64.tar.gz"
+            "kubectl-debug-queries-${VERSION}-darwin-amd64.tar.gz"
+            "kubectl-debug-queries-${VERSION}-darwin-arm64.tar.gz"
+            "kubectl-debug-queries-${VERSION}-windows-amd64.zip"
+          )
+
+          echo "Verifying release assets are downloadable..."
+          for asset in "${ASSETS[@]}"; do
+            url="https://github.com/yaacov/kubectl-debug-queries/releases/download/${VERSION}/${asset}"
+            echo "Checking: $url"
+            if curl -sSL --fail -I "$url" > /dev/null; then
+              echo "OK: $asset is available"
+            else
+              echo "FAIL: $asset is not available"
+              exit 1
+            fi
+          done
+          echo "All assets verified successfully!"
+
+      - name: Update Krew index
+        uses: rajatjindal/krew-release-bot@v0.0.46

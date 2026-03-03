@@ -1,0 +1,24 @@
+# Build binary and cross-compiled artifacts
+kubectl-debug-queries
+kubectl-debug-queries-*
+
+# Release archives and checksums
+*.tar.gz
+*.zip
+*.sha256sum
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go
+*.exe
+*.test
+*.prof

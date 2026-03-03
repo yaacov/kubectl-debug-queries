@@ -1,0 +1,68 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: debug-queries
+spec:
+  version: {{ .TagName }}
+  homepage: https://github.com/yaacov/kubectl-debug-queries
+  shortDescription: Query Kubernetes resources, logs, and events
+  description: |
+    kubectl-debug-queries is a kubectl plugin for querying Kubernetes resources,
+    logs, and events. It works as both a CLI tool and an MCP server for
+    AI assistants (Claude Desktop, Cursor IDE, OpenShift Lightspeed).
+  platforms:
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-linux-amd64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-debug-queries-linux-amd64
+      to: kubectl-debug-queries
+    - from: LICENSE
+      to: .
+    bin: kubectl-debug-queries
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-linux-arm64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-debug-queries-linux-arm64
+      to: kubectl-debug-queries
+    - from: LICENSE
+      to: .
+    bin: kubectl-debug-queries
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-darwin-amd64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-debug-queries-darwin-amd64
+      to: kubectl-debug-queries
+    - from: LICENSE
+      to: .
+    bin: kubectl-debug-queries
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-darwin-arm64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-debug-queries-darwin-arm64
+      to: kubectl-debug-queries
+    - from: LICENSE
+      to: .
+    bin: kubectl-debug-queries
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    {{addURIAndSha "https://github.com/yaacov/kubectl-debug-queries/releases/download/{{ .TagName }}/kubectl-debug-queries-{{ .TagName }}-windows-amd64.zip" .TagName }}
+    files:
+    - from: kubectl-debug-queries-windows-amd64.exe
+      to: kubectl-debug-queries.exe
+    - from: LICENSE
+      to: .
+    bin: kubectl-debug-queries.exe

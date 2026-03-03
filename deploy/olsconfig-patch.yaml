@@ -1,0 +1,27 @@
+# OLSConfig patch — register kubectl-debug-queries MCP server with OpenShift Lightspeed
+#
+# The OLSConfig "cluster" is a singleton that already exists when the
+# Lightspeed operator is installed.  This file is a strategic-merge patch
+# that ADDS the MCP server config without overwriting existing LLM settings.
+#
+# Apply with:
+#   oc patch olsconfig cluster --type merge -p "$(cat deploy/olsconfig-patch.yaml)"
+#
+# Remove with:
+#   oc patch olsconfig cluster --type json \
+#     -p '[{"op":"remove","path":"/spec/mcpServers"},{"op":"remove","path":"/spec/featureGates"}]'
+#
+spec:
+  featureGates:
+    - MCPServer
+  mcpServers:
+    - name: kubectl-debug-queries
+      streamableHTTP:
+        url: http://kubectl-debug-queries-mcp-server.openshift-monitoring.svc:8080/mcp
+        timeout: 30
+        sseReadTimeout: 30
+        enableSSE: true
+        headers:
+          Authorization: kubernetes
+  ols:
+    introspectionEnabled: true
