@@ -4,17 +4,17 @@ Query Kubernetes resources, logs, and events — as a CLI and an MCP server for 
 
 ## Installation
 
-Download or build the `kubectl-debug-queries` binary, then place it anywhere on your `PATH`:
+Download or build the binary, then place it on your `PATH` as `kubectl-debug_queries` (underscore required for kubectl plugin discovery):
 
 ```bash
 # Build from source
 make build
 
-# Copy the binary to a directory in your PATH
-sudo cp kubectl-debug-queries /usr/local/bin/
+# Copy the binary to a directory in your PATH (note the underscore in the target name)
+sudo cp kubectl-debug-queries /usr/local/bin/kubectl-debug_queries
 ```
 
-Once `kubectl-debug-queries` is on your `PATH`, kubectl automatically discovers it as a plugin and you can run it as `kubectl debug-queries`:
+Once `kubectl-debug_queries` is on your `PATH`, kubectl automatically discovers it as a plugin and you can run it as `kubectl debug-queries`:
 
 ```bash
 kubectl debug-queries --help
