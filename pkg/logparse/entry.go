@@ -11,6 +11,7 @@ const (
 	FormatKlog
 	FormatLogfmt
 	FormatCLF
+	FormatVirtV2V
 	FormatPlain
 )
 
@@ -25,6 +26,8 @@ func (f Format) String() string {
 		return "logfmt"
 	case FormatCLF:
 		return "clf"
+	case FormatVirtV2V:
+		return "virtv2v"
 	case FormatPlain:
 		return "plain"
 	default:

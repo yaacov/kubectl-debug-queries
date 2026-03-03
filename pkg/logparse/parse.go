@@ -18,6 +18,11 @@ func ParseLines(text string) ([]LogEntry, DetectResult) {
 		}
 		entries = append(entries, parseLine(line, det.Format))
 	}
+
+	if det.Format == FormatVirtV2V {
+		enrichVirtV2V(entries)
+	}
+
 	return entries, det
 }
 
@@ -31,6 +36,8 @@ func parseLine(line string, format Format) LogEntry {
 		return parseLogfmtLine(line)
 	case FormatCLF:
 		return parseCLFLine(line)
+	case FormatVirtV2V:
+		return parseVirtV2VLine(line)
 	default:
 		return LogEntry{RawLine: line, Format: FormatPlain, Parsed: false}
 	}

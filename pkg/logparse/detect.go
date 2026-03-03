@@ -22,14 +22,17 @@ func DetectFormat(text string) DetectResult {
 	}
 
 	votes := map[Format]int{
-		FormatJSON:   0,
-		FormatKlog:   0,
-		FormatLogfmt: 0,
-		FormatCLF:    0,
+		FormatVirtV2V: 0,
+		FormatJSON:    0,
+		FormatKlog:    0,
+		FormatLogfmt:  0,
+		FormatCLF:     0,
 	}
 
 	for _, line := range lines {
 		switch {
+		case isVirtV2VLine(line):
+			votes[FormatVirtV2V]++
 		case isJSONLine(line):
 			votes[FormatJSON]++
 		case isKlogLine(line):
@@ -41,8 +44,8 @@ func DetectFormat(text string) DetectResult {
 		}
 	}
 
-	// Priority order for tie-breaking: JSON > klog > logfmt > CLF
-	priority := []Format{FormatJSON, FormatKlog, FormatLogfmt, FormatCLF}
+	// Priority order: VirtV2V first (specialized), then JSON > klog > logfmt > CLF
+	priority := []Format{FormatVirtV2V, FormatJSON, FormatKlog, FormatLogfmt, FormatCLF}
 
 	bestFormat := FormatPlain
 	bestCount := 0
