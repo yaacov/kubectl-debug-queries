@@ -33,5 +33,5 @@ func Get(ctx context.Context, clients *Clients, resource, name, namespace, forma
 	}
 
 	opts := ptable.Options{}
-	return FormatTable(tbl, format, opts, queryStr)
+	return FormatTable(tbl, format, opts, queryStr, false)
 }
