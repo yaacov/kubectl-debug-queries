@@ -56,7 +56,7 @@ func init() {
 	eventsCmd.Flags().String("sort-by", "", "Column name to sort by")
 	eventsCmd.Flags().Int("limit", 0, "Maximum number of rows to return")
 	eventsCmd.Flags().BoolP("all-namespaces", "A", false, "List events across all namespaces")
-	eventsCmd.Flags().StringP("output", "o", "table", "Output format: table, markdown, json, yaml")
+	eventsCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
 	eventsCmd.Flags().StringP("query", "q", "", "TSL query (e.g. \"where Type = 'Warning'\", \"select Reason, Message\")")
 	rootCmd.AddCommand(eventsCmd)
 }

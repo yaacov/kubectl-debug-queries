@@ -16,7 +16,7 @@ Flags:
   resource   (required)  Resource type (e.g. pod, deployment, service, configmap, node, virtualmachine)
   name       (required)  Resource name
   namespace  (required)  Namespace
-  output     (optional)  Output format: table (default), markdown, json, yaml
+  output     (optional)  Output format: markdown (default), table, json, yaml
   query      (optional)  TSL query for field selection (e.g. "select Name, Status")
 
 Query examples:
@@ -40,7 +40,7 @@ Flags:
   selector        (optional)  Label selector (e.g. "app=nginx", "env in (prod,staging)")
   sort_by         (optional)  Column name to sort by (case-insensitive, e.g. "name", "age", "status")
   limit           (optional)  Maximum number of rows to return
-  output          (optional)  Output format: table (default), markdown, json, yaml
+  output          (optional)  Output format: markdown (default), table, json, yaml
   query           (optional)  TSL query for filtering, sorting, and field selection
 
 Query syntax (TSL — Tree Search Language):
@@ -123,7 +123,7 @@ Flags:
   name            (optional)  Filter by involved object name
   sort_by         (optional)  Column name to sort by (e.g. "last seen", "type", "reason")
   limit           (optional)  Maximum number of rows to return
-  output          (optional)  Output format: table (default), markdown, json, yaml
+  output          (optional)  Output format: markdown (default), table, json, yaml
   query           (optional)  TSL query for filtering, sorting, and field selection
 
 Query examples:

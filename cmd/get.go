@@ -44,7 +44,7 @@ func init() {
 	getCmd.Flags().String("resource", "", "Resource type (e.g. pod, deployment, service)")
 	getCmd.Flags().String("name", "", "Resource name")
 	getCmd.Flags().String("namespace", "", "Namespace")
-	getCmd.Flags().StringP("output", "o", "table", "Output format: table, markdown, json, yaml")
+	getCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
 	getCmd.Flags().StringP("query", "q", "", "TSL query for field selection (e.g. \"select Name, Status\")")
 	_ = getCmd.MarkFlagRequired("resource")
 	_ = getCmd.MarkFlagRequired("name")
