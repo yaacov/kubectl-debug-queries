@@ -42,5 +42,5 @@ func List(ctx context.Context, clients *Clients, resource, namespace, selector, 
 		SortBy: sortBy,
 		Limit:  limit,
 	}
-	return FormatTable(tbl, format, opts, queryStr)
+	return FormatTable(tbl, format, opts, queryStr, allNamespaces)
 }

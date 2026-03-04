@@ -49,7 +49,7 @@ func Events(ctx context.Context, clients *Clients, namespace, resource, name, so
 		SortBy: sortBy,
 		Limit:  limit,
 	}
-	return FormatTable(tbl, format, opts, queryStr)
+	return FormatTable(tbl, format, opts, queryStr, allNamespaces)
 }
 
 func joinSelectors(selectors []string) string {

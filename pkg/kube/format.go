@@ -21,7 +21,7 @@ var syntheticKeys = []string{"name", "namespace"}
 //   - table/markdown: always project to server-side columns
 //   - json/yaml without SELECT: output the full object
 //   - json/yaml with SELECT: output only the selected fields
-func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr string) (string, error) {
+func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr string, allNamespaces bool) (string, error) {
 	if format == "" {
 		format = "markdown"
 	}
@@ -50,8 +50,14 @@ func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr 
 		return formatYAMLItems(items, queryOpts)
 	case "markdown":
 		opts.Markdown = true
+		if allNamespaces {
+			columnNames, items = injectNamespaceColumn(columnNames, items)
+		}
 		return renderFilteredTable(items, columnNames, opts), nil
 	default:
+		if allNamespaces {
+			columnNames, items = injectNamespaceColumn(columnNames, items)
+		}
 		return renderFilteredTable(items, columnNames, opts), nil
 	}
 }
@@ -110,6 +116,39 @@ func stripInternalKeys(item map[string]interface{}) map[string]interface{} {
 		}
 	}
 	return out
+}
+
+// injectNamespaceColumn inserts a "Namespace" column right after "Name" in the
+// column list and populates each item's _columns map with the namespace value.
+// This mirrors kubectl's behavior when --all-namespaces is used.
+func injectNamespaceColumn(columnNames []string, items []map[string]interface{}) ([]string, []map[string]interface{}) {
+	for _, c := range columnNames {
+		if strings.EqualFold(c, "Namespace") {
+			return columnNames, items
+		}
+	}
+
+	insertIdx := 0
+	for i, c := range columnNames {
+		if strings.EqualFold(c, "Name") {
+			insertIdx = i + 1
+			break
+		}
+	}
+
+	newCols := make([]string, 0, len(columnNames)+1)
+	newCols = append(newCols, columnNames[:insertIdx]...)
+	newCols = append(newCols, "Namespace")
+	newCols = append(newCols, columnNames[insertIdx:]...)
+
+	for _, item := range items {
+		ns, _ := item["namespace"].(string)
+		if cells, ok := item[cellsKey].(map[string]interface{}); ok {
+			cells["Namespace"] = ns
+		}
+	}
+
+	return newCols, items
 }
 
 // renderFilteredTable projects filtered full-struct items back to server-side
