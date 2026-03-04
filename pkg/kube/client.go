@@ -106,14 +106,21 @@ func buildResourceURL(host string, gvr schema.GroupVersionResource, namespace, n
 }
 
 // doTableRequest performs an HTTP GET with the server-side table Accept header
-// and decodes the response into a ServerTable.
-func (c *Clients) doTableRequest(ctx context.Context, url string) (*ServerTable, error) {
+// and decodes the response into a ServerTable. Full resource objects are always
+// requested (includeObject=Object) so that queries can filter on any field.
+func (c *Clients) doTableRequest(ctx context.Context, rawURL string) (*ServerTable, error) {
 	rt, err := rest.TransportFor(c.Config)
 	if err != nil {
 		return nil, fmt.Errorf("building transport: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if strings.Contains(rawURL, "?") {
+		rawURL += "&includeObject=Object"
+	} else {
+		rawURL += "?includeObject=Object"
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, err
 	}

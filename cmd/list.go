@@ -30,7 +30,7 @@ For table output, the original server-side columns are always shown.`,
 		sortBy, _ := cmd.Flags().GetString("sort-by")
 		limit, _ := cmd.Flags().GetInt("limit")
 		allNamespaces, _ := cmd.Flags().GetBool("all-namespaces")
-		format, _ := cmd.Flags().GetString("format")
+		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
 		if !allNamespaces && namespace == "" {
@@ -55,11 +55,11 @@ For table output, the original server-side columns are always shown.`,
 func init() {
 	listCmd.Flags().String("resource", "", "Resource type (e.g. pods, deployments, services)")
 	listCmd.Flags().String("namespace", "", "Namespace")
-	listCmd.Flags().String("selector", "", "Label selector (e.g. app=nginx)")
+	listCmd.Flags().StringP("selector", "l", "", "Label selector (e.g. app=nginx)")
 	listCmd.Flags().String("sort-by", "", "Column name to sort by")
 	listCmd.Flags().Int("limit", 0, "Maximum number of rows to return")
-	listCmd.Flags().Bool("all-namespaces", false, "List across all namespaces")
-	listCmd.Flags().String("format", "table", "Output format: table, markdown, json, yaml")
+	listCmd.Flags().BoolP("all-namespaces", "A", false, "List across all namespaces")
+	listCmd.Flags().StringP("output", "o", "table", "Output format: table, markdown, json, yaml")
 	listCmd.Flags().StringP("query", "q", "", "TSL query (e.g. \"where Status = 'Running'\", \"select Name, Status where Restarts > 5\")")
 	_ = listCmd.MarkFlagRequired("resource")
 	rootCmd.AddCommand(listCmd)

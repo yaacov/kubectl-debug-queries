@@ -39,7 +39,7 @@ kubectl debug-queries logs --name my-pod --namespace default --tail 100 --sort-b
 kubectl debug-queries logs --name deployment/nginx --namespace default --tail 100
 
 # Get raw unprocessed logs
-kubectl debug-queries logs --name my-pod --namespace default --tail 100 --format raw
+kubectl debug-queries logs --name my-pod --namespace default --tail 100 --output raw
 
 # List events for a specific resource
 kubectl debug-queries events --namespace default --resource Pod --name my-pod
@@ -48,7 +48,7 @@ kubectl debug-queries events --namespace default --resource Pod --name my-pod
 kubectl debug-queries list --resource pods --namespace default --query "Status = 'Running'"
 
 # JSON output with field selection
-kubectl debug-queries list --resource pods --namespace default --format json \
+kubectl debug-queries list --resource pods --namespace default --output json \
   --query "select Name, Status where Restarts > 0"
 
 # Filter logs by level
@@ -95,9 +95,9 @@ All commands use named flags only — no positional arguments. The CLI and MCP t
 | Command | Description | Required Flags |
 |---------|-------------|----------------|
 | `get` | Get a single resource | `--resource`, `--name`, `--namespace` |
-| `list` | List resources | `--resource`, `--namespace` (or `--all-namespaces`) |
+| `list` | List resources | `--resource`, `--namespace` (or `--all-namespaces` / `-A`) |
 | `logs` | Retrieve container logs | `--name`, `--namespace` |
-| `events` | List events | `--namespace` (or `--all-namespaces`) |
+| `events` | List events | `--namespace` (or `--all-namespaces` / `-A`) |
 
 ## Deploy on OpenShift
 

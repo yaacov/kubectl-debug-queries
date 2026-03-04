@@ -53,10 +53,10 @@ func registerTools(server *mcpsdk.Server, capturedHeaders http.Header) {
 		Description: `Query Kubernetes resources, logs, and events. Use debug_help for flag details.
 
 Subcommands (pass as "command"):
-  get     Get a single resource        (flags: resource, name, namespace, format, query)
-  list    List resources of a type      (flags: resource, namespace, all_namespaces, selector, sort_by, limit, format, query)
-  logs    Retrieve container logs        (flags: name, namespace, container, previous, tail, since, sort_by, format, query)
-  events  List Kubernetes events        (flags: namespace, all_namespaces, resource, name, sort_by, limit, format, query)
+  get     Get a single resource        (flags: resource, name, namespace, output, query)
+  list    List resources of a type      (flags: resource, namespace, all_namespaces, selector, sort_by, limit, output, query)
+  logs    Retrieve container logs        (flags: name, namespace, container, previous, tail, since, sort_by, output, query)
+  events  List Kubernetes events        (flags: namespace, all_namespaces, resource, name, sort_by, limit, output, query)
 
 The "query" flag accepts TSL (Tree Search Language) syntax for filtering:
   "where Status = 'Running'"
@@ -68,7 +68,7 @@ For JSON output, SELECT controls which fields appear. For table output, columns 
 Examples:
   {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default"}}
   {command: "list", flags: {resource: "pods", namespace: "kube-system", query: "where Status = 'Running'"}}
-  {command: "list", flags: {resource: "pods", namespace: "default", format: "json", query: "select Name, Status where Restarts > 0"}}
+  {command: "list", flags: {resource: "pods", namespace: "default", output: "json", query: "select Name, Status where Restarts > 0"}}
   {command: "logs", flags: {name: "my-pod", namespace: "default", tail: 100, query: "where level = 'ERROR'"}}
   {command: "events", flags: {namespace: "default", query: "where Type = 'Warning'"}}`,
 	}, wrapWithHeaders(handleDebugRead, capturedHeaders))
@@ -119,7 +119,7 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 			kube.FlagStr(flags, "resource"),
 			kube.FlagStr(flags, "name"),
 			kube.FlagStr(flags, "namespace"),
-			kube.FlagStr(flags, "format"),
+			kube.FlagStr(flags, "output"),
 			kube.FlagStr(flags, "query"))
 	case "list":
 		result, err = kube.List(ctx, clients,
@@ -129,7 +129,7 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 			kube.FlagStr(flags, "sort_by"),
 			kube.FlagInt(flags, "limit"),
 			kube.FlagBool(flags, "all_namespaces"),
-			kube.FlagStr(flags, "format"),
+			kube.FlagStr(flags, "output"),
 			kube.FlagStr(flags, "query"))
 	case "logs":
 		result, err = kube.Logs(ctx, clients,
@@ -140,7 +140,7 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 			kube.FlagInt(flags, "tail"),
 			kube.FlagStr(flags, "since"),
 			kube.FlagStr(flags, "sort_by"),
-			kube.FlagStr(flags, "format"),
+			kube.FlagStr(flags, "output"),
 			kube.FlagStr(flags, "query"))
 	case "events":
 		result, err = kube.Events(ctx, clients,
@@ -150,14 +150,14 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 			kube.FlagStr(flags, "sort_by"),
 			kube.FlagInt(flags, "limit"),
 			kube.FlagBool(flags, "all_namespaces"),
-			kube.FlagStr(flags, "format"),
+			kube.FlagStr(flags, "output"),
 			kube.FlagStr(flags, "query"))
 	default:
 		return textResult(fmt.Sprintf("Unknown command %q. Available: get, list, logs, events.\nCall debug_help(\"%s\") for details.", command, command)), struct{}{}, nil
 	}
 
 	if err != nil {
-		format := kube.FlagStr(flags, "format")
+		format := kube.FlagStr(flags, "output")
 		if kube.IsJSONFormat(format) {
 			return textResult(kube.JSONError(err)), struct{}{}, nil
 		}
@@ -165,7 +165,7 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 	}
 
 	klog.V(1).Infof("debug_read %s completed in %.3fs", command, time.Since(t0).Seconds())
-	if result == "" && kube.IsJSONFormat(kube.FlagStr(flags, "format")) {
+	if result == "" && kube.IsJSONFormat(kube.FlagStr(flags, "output")) {
 		return textResult(kube.JSONEmpty), struct{}{}, nil
 	}
 	return textResult(result), struct{}{}, nil
