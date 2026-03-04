@@ -59,7 +59,7 @@ func init() {
 	listCmd.Flags().String("sort-by", "", "Column name to sort by")
 	listCmd.Flags().Int("limit", 0, "Maximum number of rows to return")
 	listCmd.Flags().BoolP("all-namespaces", "A", false, "List across all namespaces")
-	listCmd.Flags().StringP("output", "o", "table", "Output format: table, markdown, json, yaml")
+	listCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
 	listCmd.Flags().StringP("query", "q", "", "TSL query (e.g. \"where Status = 'Running'\", \"select Name, Status where Restarts > 5\")")
 	_ = listCmd.MarkFlagRequired("resource")
 	rootCmd.AddCommand(listCmd)

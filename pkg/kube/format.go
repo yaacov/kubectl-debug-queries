@@ -23,7 +23,7 @@ var syntheticKeys = []string{"name", "namespace"}
 //   - json/yaml with SELECT: output only the selected fields
 func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr string) (string, error) {
 	if format == "" {
-		format = "table"
+		format = "markdown"
 	}
 
 	queryOpts, err := query.ParseQueryString(queryStr)

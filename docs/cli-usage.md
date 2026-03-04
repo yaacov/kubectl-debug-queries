@@ -27,7 +27,7 @@ kubectl debug-queries get --resource pod --name my-pod --namespace default --out
 | `--resource` | yes | | Resource type (e.g. pod, deployment, service, configmap, node) |
 | `--name` | yes | | Resource name |
 | `--namespace` | yes | | Namespace |
-| `--output` / `-o` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
+| `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering and field selection (see [Query Language](query-language.md)) |
 
 ### list
@@ -68,7 +68,7 @@ kubectl debug-queries list --resource pods --namespace default --output json \
 | `--selector` / `-l` | no | | Label selector (e.g. `app=nginx`, `env in (prod,staging)`) |
 | `--sort-by` | no | | Column name to sort by (case-insensitive) |
 | `--limit` | no | `0` | Maximum number of rows to return (0 = no limit) |
-| `--output` / `-o` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
+| `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
 
 ### logs
@@ -177,7 +177,7 @@ kubectl debug-queries events --namespace default --output json \
 | `--name` | no | | Filter by involved object name |
 | `--sort-by` | no | | Column name to sort by (e.g. `last seen`, `type`, `reason`) |
 | `--limit` | no | `0` | Maximum number of rows to return (0 = no limit) |
-| `--output` / `-o` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
+| `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
 
 ## Global Flags
@@ -197,8 +197,8 @@ All commands accept standard kubectl flags:
 
 ### Resources (get, list, events)
 
-- **table** (default) — Pretty-printed columns with aligned headers, auto-detected from the API server
-- **markdown** — GitHub-compatible Markdown table (same columns as `table`)
+- **markdown** (default) — GitHub-compatible Markdown table with auto-detected columns from the API server
+- **table** — Pretty-printed columns with aligned headers (same columns as `markdown`)
 - **json** — JSON array of row data keyed by column name
 - **yaml** — YAML output with one document per row
 

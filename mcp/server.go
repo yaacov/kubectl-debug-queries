@@ -105,6 +105,13 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 		flags = map[string]any{}
 	}
 
+	if kube.FlagStr(flags, "output") == "" {
+		switch command {
+		case "get", "list", "events":
+			flags["output"] = "markdown"
+		}
+	}
+
 	clients, err := kube.NewClients(cfg)
 	if err != nil {
 		return textResult(fmt.Sprintf("Failed to create Kubernetes client: %v", err)), struct{}{}, nil
