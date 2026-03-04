@@ -41,10 +41,10 @@ Query Kubernetes resources, logs, and events. Subcommands:
 
 | Command | Description | Key Flags |
 |---------|-------------|-----------|
-| `get` | Get a single resource | `resource`, `name`, `namespace`, `format`, `query` |
-| `list` | List resources | `resource`, `namespace`, `all_namespaces`, `selector`, `sort_by`, `limit`, `format`, `query` |
-| `logs` | Retrieve container logs | `name`, `namespace`, `container`, `previous`, `tail`, `since`, `sort_by`, `format`, `query` |
-| `events` | List events | `namespace`, `all_namespaces`, `resource`, `name`, `sort_by`, `limit`, `format`, `query` |
+| `get` | Get a single resource | `resource`, `name`, `namespace`, `output`, `query` |
+| `list` | List resources | `resource`, `namespace`, `all_namespaces`, `selector`, `sort_by`, `limit`, `output`, `query` |
+| `logs` | Retrieve container logs | `name`, `namespace`, `container`, `previous`, `tail`, `since`, `sort_by`, `output`, `query` |
+| `events` | List events | `namespace`, `all_namespaces`, `resource`, `name`, `sort_by`, `limit`, `output`, `query` |
 
 The optional `query` flag accepts [TSL (Tree Search Language)](query-language.md) syntax for filtering, sorting, and field selection.
 
@@ -56,8 +56,8 @@ The optional `query` flag accepts [TSL (Tree Search Language)](query-language.md
 {"command": "list", "flags": {"resource": "deployments", "all_namespaces": true, "limit": 20}}
 {"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 100, "sort_by": "time_desc"}}
 {"command": "logs", "flags": {"name": "deployment/nginx", "namespace": "default", "tail": 100}}
-{"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 200, "format": "raw"}}
-{"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 200, "format": "json"}}
+{"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 200, "output": "raw"}}
+{"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 200, "output": "json"}}
 {"command": "events", "flags": {"namespace": "default", "resource": "Pod", "name": "my-pod"}}
 ```
 
@@ -65,7 +65,7 @@ The optional `query` flag accepts [TSL (Tree Search Language)](query-language.md
 
 ```json
 {"command": "list", "flags": {"resource": "pods", "namespace": "default", "query": "where Status = 'Running'"}}
-{"command": "list", "flags": {"resource": "pods", "namespace": "default", "format": "json", "query": "select Name, Status where Restarts > 0"}}
+{"command": "list", "flags": {"resource": "pods", "namespace": "default", "output": "json", "query": "select Name, Status where Restarts > 0"}}
 {"command": "events", "flags": {"namespace": "default", "query": "where Type = 'Warning'"}}
 {"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 100, "query": "where level = 'ERROR'"}}
 ```

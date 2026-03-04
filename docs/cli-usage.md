@@ -12,11 +12,11 @@ Get a single Kubernetes resource by type, name, and namespace. Columns are auto-
 
 ```bash
 kubectl debug-queries get --resource pod --name my-pod --namespace default
-kubectl debug-queries get --resource deployment --name nginx --namespace web --format json
-kubectl debug-queries get --resource node --name worker-1 --namespace default --format yaml
+kubectl debug-queries get --resource deployment --name nginx --namespace web --output json
+kubectl debug-queries get --resource node --name worker-1 --namespace default --output yaml
 
 # Field selection with JSON output
-kubectl debug-queries get --resource pod --name my-pod --namespace default --format json \
+kubectl debug-queries get --resource pod --name my-pod --namespace default --output json \
   --query "select Name, Status"
 ```
 
@@ -27,7 +27,7 @@ kubectl debug-queries get --resource pod --name my-pod --namespace default --for
 | `--resource` | yes | | Resource type (e.g. pod, deployment, service, configmap, node) |
 | `--name` | yes | | Resource name |
 | `--namespace` | yes | | Namespace |
-| `--format` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
+| `--output` / `-o` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering and field selection (see [Query Language](query-language.md)) |
 
 ### list
@@ -45,7 +45,7 @@ kubectl debug-queries list --resource pods --namespace kube-system --selector ap
 kubectl debug-queries list --resource deployments --all-namespaces --limit 20
 
 # JSON output
-kubectl debug-queries list --resource services --namespace web --format json
+kubectl debug-queries list --resource services --namespace web --output json
 
 # Filter with TSL query ("where" keyword is optional for bare expressions)
 kubectl debug-queries list --resource pods --namespace default --query "Status = 'Running'"
@@ -54,7 +54,7 @@ kubectl debug-queries list --resource pods --namespace default --query "Status =
 kubectl debug-queries list --resource pods --namespace default --query "Name ~= 'nginx-.*' order by Restarts desc"
 
 # JSON output with field selection
-kubectl debug-queries list --resource pods --namespace default --format json \
+kubectl debug-queries list --resource pods --namespace default --output json \
   --query "select Name, Status where Restarts > 0 order by Restarts desc limit 10"
 ```
 
@@ -64,11 +64,11 @@ kubectl debug-queries list --resource pods --namespace default --format json \
 |------|----------|---------|-------------|
 | `--resource` | yes | | Resource type (e.g. pods, deployments, services) |
 | `--namespace` | yes* | | Namespace (*required unless `--all-namespaces`) |
-| `--all-namespaces` | no | `false` | List across all namespaces |
-| `--selector` | no | | Label selector (e.g. `app=nginx`, `env in (prod,staging)`) |
+| `--all-namespaces` / `-A` | no | `false` | List across all namespaces |
+| `--selector` / `-l` | no | | Label selector (e.g. `app=nginx`, `env in (prod,staging)`) |
 | `--sort-by` | no | | Column name to sort by (case-insensitive) |
 | `--limit` | no | `0` | Maximum number of rows to return (0 = no limit) |
-| `--format` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
+| `--output` / `-o` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
 
 ### logs
@@ -102,10 +102,10 @@ kubectl debug-queries logs --name my-pod --namespace default --container sidecar
 kubectl debug-queries logs --name my-pod --namespace default --previous --tail 50
 
 # Raw unprocessed logs
-kubectl debug-queries logs --name my-pod --namespace default --tail 100 --format raw
+kubectl debug-queries logs --name my-pod --namespace default --tail 100 --output raw
 
 # Parsed JSON output
-kubectl debug-queries logs --name my-pod --namespace default --tail 100 --format json
+kubectl debug-queries logs --name my-pod --namespace default --tail 100 --output json
 
 # Filter by log level ("where" is optional for bare expressions)
 kubectl debug-queries logs --name deployment/nginx --namespace default --tail 200 \
@@ -121,7 +121,7 @@ kubectl debug-queries logs --name deployment/forklift-controller \
   --query "fields.map is not null"
 
 # JSON output with field selection
-kubectl debug-queries logs --name my-pod --namespace default --tail 200 --format json \
+kubectl debug-queries logs --name my-pod --namespace default --tail 200 --output json \
   --query "select timestamp, level, message where level = 'ERROR'"
 ```
 
@@ -136,7 +136,7 @@ kubectl debug-queries logs --name my-pod --namespace default --tail 200 --format
 | `--tail` | no | `0` | Number of lines from the end (0 = all) |
 | `--since` | no | | Duration: return logs newer than this (e.g. `1h`, `30m`, `5s`) |
 | `--sort-by` | no | `time` | `time` (oldest first) or `time_desc` (newest first) |
-| `--format` | no | `smart` | `smart` (auto-detect and compact), `raw`, `json` |
+| `--output` / `-o` | no | `smart` | `smart` (auto-detect and compact), `raw`, `json` |
 | `--query` / `-q` | no | | TSL query on parsed log fields (see [Query Language](query-language.md)) |
 
 ### events
@@ -154,7 +154,7 @@ kubectl debug-queries events --namespace default --resource Pod --name my-pod
 kubectl debug-queries events --all-namespaces --sort-by "last seen" --limit 50
 
 # JSON output
-kubectl debug-queries events --namespace web --resource Deployment --format json
+kubectl debug-queries events --namespace web --resource Deployment --output json
 
 # Filter with TSL query ("where" is optional)
 kubectl debug-queries events --namespace default --query "Type = 'Warning'"
@@ -163,7 +163,7 @@ kubectl debug-queries events --namespace default --query "Type = 'Warning'"
 kubectl debug-queries events --namespace default --query "Reason = 'BackOff' order by Last_Seen desc"
 
 # JSON output with field selection
-kubectl debug-queries events --namespace default --format json \
+kubectl debug-queries events --namespace default --output json \
   --query "select Reason, Message where Type = 'Warning'"
 ```
 
@@ -172,12 +172,12 @@ kubectl debug-queries events --namespace default --format json \
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--namespace` | yes* | | Namespace (*required unless `--all-namespaces`) |
-| `--all-namespaces` | no | `false` | List events across all namespaces |
+| `--all-namespaces` / `-A` | no | `false` | List events across all namespaces |
 | `--resource` | no | | Filter by involved object kind (e.g. `Pod`, `Deployment`) |
 | `--name` | no | | Filter by involved object name |
 | `--sort-by` | no | | Column name to sort by (e.g. `last seen`, `type`, `reason`) |
 | `--limit` | no | `0` | Maximum number of rows to return (0 = no limit) |
-| `--format` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
+| `--output` / `-o` | no | `table` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
 
 ## Global Flags
@@ -254,7 +254,7 @@ kubectl debug-queries list --resource pods --namespace default \
   --query "Restarts > 0 order by Restarts desc limit 10"
 
 # Field selection (JSON output)
-kubectl debug-queries list --resource pods --namespace default --format json --query "select Name, Status"
+kubectl debug-queries list --resource pods --namespace default --output json --query "select Name, Status"
 
 # Filter parsed log entries by level
 kubectl debug-queries logs --name my-pod --namespace default --tail 200 --query "level = 'ERROR'"

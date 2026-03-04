@@ -7,12 +7,20 @@ import (
 
 	"github.com/yaacov/kubectl-debug-queries/pkg/query"
 	ptable "github.com/yaacov/kubectl-debug-queries/pkg/table"
+	sigyaml "sigs.k8s.io/yaml"
 )
 
+const cellsKey = "_columns"
+
+// Synthetic top-level keys hoisted from metadata for convenient querying.
+var syntheticKeys = []string{"name", "namespace"}
+
 // FormatTable converts a ServerTable to a rendered string in the given format.
-// When queryStr is non-empty, rows are filtered/sorted/limited by the TSL query.
-// For JSON output, SELECT fields produce a projected JSON object; for table output,
-// the original server-side columns are preserved.
+// Queries (WHERE, ORDER BY, LIMIT) always run against the full Kubernetes object.
+// Output projection depends on format:
+//   - table/markdown: always project to server-side columns
+//   - json/yaml without SELECT: output the full object
+//   - json/yaml with SELECT: output only the selected fields
 func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr string) (string, error) {
 	if format == "" {
 		format = "table"
@@ -23,23 +31,23 @@ func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr 
 		return "", fmt.Errorf("invalid query: %w", err)
 	}
 
-	items := tableToMaps(tbl)
+	columnNames := make([]string, len(tbl.Columns))
+	for i, c := range tbl.Columns {
+		columnNames[i] = c.Name
+	}
+
+	items := rowsToFullItems(tbl)
 
 	items, err = query.ApplyQuery(items, queryOpts)
 	if err != nil {
 		return "", fmt.Errorf("query error: %w", err)
 	}
 
-	columnNames := make([]string, len(tbl.Columns))
-	for i, c := range tbl.Columns {
-		columnNames[i] = c.Name
-	}
-
 	switch format {
 	case "json":
-		return formatJSONItems(items, queryOpts), nil
+		return formatJSONItems(items, queryOpts)
 	case "yaml":
-		return formatYAMLItems(items, columnNames, queryOpts), nil
+		return formatYAMLItems(items, queryOpts)
 	case "markdown":
 		opts.Markdown = true
 		return renderFilteredTable(items, columnNames, opts), nil
@@ -48,30 +56,74 @@ func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr 
 	}
 }
 
-// tableToMaps converts ServerTable rows to a slice of maps keyed by column name.
-func tableToMaps(tbl *ServerTable) []map[string]interface{} {
+// rowsToFullItems extracts the full Kubernetes object from each row for query
+// filtering. Server-side column values are embedded under the _columns key so
+// that table/markdown rendering can project back to them after filtering.
+// Synthetic "name" and "namespace" keys are hoisted from metadata so users can
+// write "where name = 'foo'" instead of "where metadata.name = 'foo'".
+func rowsToFullItems(tbl *ServerTable) []map[string]interface{} {
 	items := make([]map[string]interface{}, 0, len(tbl.Rows))
 	for _, r := range tbl.Rows {
-		item := make(map[string]interface{}, len(tbl.Columns))
-		for j, col := range tbl.Columns {
-			if j < len(r.Cells) {
-				item[col.Name] = r.Cells[j]
+		item := make(map[string]interface{})
+		for k, v := range r.Object {
+			item[k] = v
+		}
+
+		if md, ok := item["metadata"].(map[string]interface{}); ok {
+			for _, key := range syntheticKeys {
+				if v, exists := md[key]; exists {
+					item[key] = v
+				}
 			}
 		}
+
+		cells := make(map[string]interface{}, len(tbl.Columns))
+		for j, col := range tbl.Columns {
+			if j < len(r.Cells) {
+				cells[col.Name] = r.Cells[j]
+			}
+		}
+		item[cellsKey] = cells
+
 		items = append(items, item)
 	}
 	return items
 }
 
-// renderFilteredTable converts filtered maps back to rows and renders as a table,
-// preserving the original server-side columns.
+// stripInternalKeys returns a shallow copy of item without the internal
+// _columns key or synthetic shortcut keys (name, namespace).
+func stripInternalKeys(item map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(item))
+	for k, v := range item {
+		if k == cellsKey {
+			continue
+		}
+		skip := false
+		for _, sk := range syntheticKeys {
+			if k == sk {
+				skip = true
+				break
+			}
+		}
+		if !skip {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+// renderFilteredTable projects filtered full-struct items back to server-side
+// column values and renders as a table.
 func renderFilteredTable(items []map[string]interface{}, columnNames []string, opts ptable.Options) string {
 	rows := make([][]string, len(items))
 	for i, item := range items {
 		row := make([]string, len(columnNames))
+		cells, _ := item[cellsKey].(map[string]interface{})
 		for j, col := range columnNames {
-			if v, ok := item[col]; ok {
-				row[j] = fmt.Sprintf("%v", v)
+			if cells != nil {
+				if v, ok := cells[col]; ok {
+					row[j] = fmt.Sprintf("%v", v)
+				}
 			}
 		}
 		rows[i] = row
@@ -80,11 +132,11 @@ func renderFilteredTable(items []map[string]interface{}, columnNames []string, o
 	return ptable.RenderTable("", columnNames, rows, opts)
 }
 
-// formatJSONItems marshals items as JSON. When the query has a SELECT clause,
-// only the selected fields are included in each object.
-func formatJSONItems(items []map[string]interface{}, queryOpts *query.QueryOptions) string {
+// formatJSONItems marshals items as JSON. Without SELECT, the full Kubernetes
+// object is output. With SELECT, only the selected fields are projected.
+func formatJSONItems(items []map[string]interface{}, queryOpts *query.QueryOptions) (string, error) {
 	if len(items) == 0 {
-		return JSONEmpty
+		return JSONEmpty, nil
 	}
 
 	if queryOpts.HasSelect {
@@ -98,17 +150,27 @@ func formatJSONItems(items []map[string]interface{}, queryOpts *query.QueryOptio
 			}
 			projected[i] = p
 		}
-		b, _ := json.MarshalIndent(projected, "", "  ")
-		return string(b)
+		b, err := json.MarshalIndent(projected, "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("marshaling JSON: %w", err)
+		}
+		return string(b), nil
 	}
 
-	b, _ := json.MarshalIndent(items, "", "  ")
-	return string(b)
+	cleaned := make([]map[string]interface{}, len(items))
+	for i, item := range items {
+		cleaned[i] = stripInternalKeys(item)
+	}
+	b, err := json.MarshalIndent(cleaned, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("marshaling JSON: %w", err)
+	}
+	return string(b), nil
 }
 
-// formatYAMLItems formats items as YAML. When the query has a SELECT clause,
-// only the selected fields are included.
-func formatYAMLItems(items []map[string]interface{}, columnNames []string, queryOpts *query.QueryOptions) string {
+// formatYAMLItems marshals items as YAML. Without SELECT, the full Kubernetes
+// object is output. With SELECT, only the selected fields are projected.
+func formatYAMLItems(items []map[string]interface{}, queryOpts *query.QueryOptions) (string, error) {
 	var sb strings.Builder
 
 	if queryOpts.HasSelect {
@@ -116,26 +178,32 @@ func formatYAMLItems(items []map[string]interface{}, columnNames []string, query
 			if i > 0 {
 				sb.WriteString("---\n")
 			}
+			p := make(map[string]interface{}, len(queryOpts.Select))
 			for _, sel := range queryOpts.Select {
 				if v, err := query.GetValue(item, sel.Alias, queryOpts.Select); err == nil && v != nil {
-					sb.WriteString(fmt.Sprintf("%s: %v\n", sel.Alias, v))
+					p[sel.Alias] = v
 				}
 			}
+			b, err := sigyaml.Marshal(p)
+			if err != nil {
+				return "", fmt.Errorf("marshaling YAML: %w", err)
+			}
+			sb.Write(b)
 		}
-		return sb.String()
+		return sb.String(), nil
 	}
 
 	for i, item := range items {
 		if i > 0 {
 			sb.WriteString("---\n")
 		}
-		for _, col := range columnNames {
-			if v, ok := item[col]; ok {
-				sb.WriteString(fmt.Sprintf("%s: %v\n", col, v))
-			}
+		b, err := sigyaml.Marshal(stripInternalKeys(item))
+		if err != nil {
+			return "", fmt.Errorf("marshaling YAML: %w", err)
 		}
+		sb.Write(b)
 	}
-	return sb.String()
+	return sb.String(), nil
 }
 
 // IsJSONFormat returns true when the output format is "json".

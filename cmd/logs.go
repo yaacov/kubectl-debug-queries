@@ -21,12 +21,12 @@ Supports tail lines, time-based filtering, previous container logs,
 and reverse-time sorting. All parameters are named flags.
 
 By default, logs are auto-detected and rendered in a compact format.
-Use --format raw for unprocessed output or --format json for structured output.
+Use --output raw for unprocessed output or --output json for structured output.
 
 Use --query/-q for TSL filtering on parsed log fields:
   --query "where level = 'ERROR'"
   --query "where message ~= 'timeout'"
-  --query "select timestamp, level, message where level = 'ERROR'" --format json`,
+  --query "select timestamp, level, message where level = 'ERROR'" --output json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name, _ := cmd.Flags().GetString("name")
 		namespace, _ := cmd.Flags().GetString("namespace")
@@ -35,7 +35,7 @@ Use --query/-q for TSL filtering on parsed log fields:
 		tail, _ := cmd.Flags().GetInt("tail")
 		since, _ := cmd.Flags().GetString("since")
 		sortBy, _ := cmd.Flags().GetString("sort-by")
-		format, _ := cmd.Flags().GetString("format")
+		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
 		cfg := connection.ResolveRESTConfig(cmd.Context())
@@ -61,7 +61,7 @@ func init() {
 	logsCmd.Flags().Int("tail", 0, "Number of lines from the end to return")
 	logsCmd.Flags().String("since", "", "Return logs newer than this duration (e.g. 1h, 30m)")
 	logsCmd.Flags().String("sort-by", "", "Sort order: time (default, oldest first) or time_desc (newest first)")
-	logsCmd.Flags().String("format", "", "Output format: smart (default), raw, json")
+	logsCmd.Flags().StringP("output", "o", "", "Output format: smart (default), raw, json")
 	logsCmd.Flags().StringP("query", "q", "", "TSL query on parsed log fields (e.g. \"where level = 'ERROR'\")")
 	_ = logsCmd.MarkFlagRequired("name")
 	_ = logsCmd.MarkFlagRequired("namespace")

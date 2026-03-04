@@ -19,7 +19,7 @@ resource kind and name, sorting, and row limiting. All parameters are named flag
 Use --query/-q for TSL (Tree Search Language) filtering:
   --query "where Type = 'Warning'"
   --query "where Reason = 'BackOff' order by Last_Seen desc"
-  --query "select Reason, Message where Type = 'Warning'" --format json`,
+  --query "select Reason, Message where Type = 'Warning'" --output json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		namespace, _ := cmd.Flags().GetString("namespace")
 		resource, _ := cmd.Flags().GetString("resource")
@@ -27,7 +27,7 @@ Use --query/-q for TSL (Tree Search Language) filtering:
 		sortBy, _ := cmd.Flags().GetString("sort-by")
 		limit, _ := cmd.Flags().GetInt("limit")
 		allNamespaces, _ := cmd.Flags().GetBool("all-namespaces")
-		format, _ := cmd.Flags().GetString("format")
+		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
 		if !allNamespaces && namespace == "" {
@@ -55,8 +55,8 @@ func init() {
 	eventsCmd.Flags().String("name", "", "Filter by involved object name")
 	eventsCmd.Flags().String("sort-by", "", "Column name to sort by")
 	eventsCmd.Flags().Int("limit", 0, "Maximum number of rows to return")
-	eventsCmd.Flags().Bool("all-namespaces", false, "List events across all namespaces")
-	eventsCmd.Flags().String("format", "table", "Output format: table, markdown, json, yaml")
+	eventsCmd.Flags().BoolP("all-namespaces", "A", false, "List events across all namespaces")
+	eventsCmd.Flags().StringP("output", "o", "table", "Output format: table, markdown, json, yaml")
 	eventsCmd.Flags().StringP("query", "q", "", "TSL query (e.g. \"where Type = 'Warning'\", \"select Reason, Message\")")
 	rootCmd.AddCommand(eventsCmd)
 }

@@ -17,12 +17,12 @@ Columns are auto-detected from the API server (same as kubectl get).
 All parameters are named flags.
 
 Use --query/-q for field selection with JSON/YAML output:
-  --query "select Name, Status" --format json`,
+  --query "select Name, Status" --output json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resource, _ := cmd.Flags().GetString("resource")
 		name, _ := cmd.Flags().GetString("name")
 		namespace, _ := cmd.Flags().GetString("namespace")
-		format, _ := cmd.Flags().GetString("format")
+		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
 		cfg := connection.ResolveRESTConfig(cmd.Context())
@@ -44,7 +44,7 @@ func init() {
 	getCmd.Flags().String("resource", "", "Resource type (e.g. pod, deployment, service)")
 	getCmd.Flags().String("name", "", "Resource name")
 	getCmd.Flags().String("namespace", "", "Namespace")
-	getCmd.Flags().String("format", "table", "Output format: table, markdown, json, yaml")
+	getCmd.Flags().StringP("output", "o", "table", "Output format: table, markdown, json, yaml")
 	getCmd.Flags().StringP("query", "q", "", "TSL query for field selection (e.g. \"select Name, Status\")")
 	_ = getCmd.MarkFlagRequired("resource")
 	_ = getCmd.MarkFlagRequired("name")

@@ -18,13 +18,13 @@ If the query does not start with a recognized keyword (`select`, `where`, `order
 
 ```bash
 # These are equivalent:
--q "Status = 'Running'"
--q "where Status = 'Running'"
+--query "Status = 'Running'"
+--query "where Status = 'Running'"
 
 # Short-form works with any expression:
--q "Name ~= 'nginx-.*'"
--q "level = 'ERROR' or level = 'WARN'"
--q "fields.map is not null"
+--query "Name ~= 'nginx-.*'"
+--query "level = 'ERROR' or level = 'WARN'"
+--query "fields.map is not null"
 ```
 
 ### Clause Reference
@@ -251,7 +251,7 @@ where Restarts > 0 limit 5
 
 For resources (`get`, `list`, `events`), field names correspond to the server-side table columns you see in table output (e.g. `Name`, `Status`, `Ready`, `Age`, `Restarts`, `Type`, `Reason`, `Message`).
 
-For logs (`--format json` or `--format smart`), the queryable fields are: `timestamp`, `level`, `message`, `source`, `logger`, `raw_line`, `format`, `parsed`.
+For logs (`--output json` or `--output smart`), the queryable fields are: `timestamp`, `level`, `message`, `source`, `logger`, `raw_line`, `format`, `parsed`.
 
 ### Column Names with Spaces
 
@@ -333,7 +333,7 @@ kubectl debug-queries list --resource pods --namespace default \
   --query "where Restarts > 0 order by Restarts desc"
 
 # Top 5 pods by restart count (JSON with field selection)
-kubectl debug-queries list --resource pods --namespace default --format json \
+kubectl debug-queries list --resource pods --namespace default --output json \
   --query "select Name, Restarts where Restarts > 0 order by Restarts desc limit 5"
 
 # Deployments not available
@@ -343,7 +343,7 @@ kubectl debug-queries list --resource deployments --all-namespaces --query "Read
 kubectl debug-queries list --resource nodes --namespace default --query "Status != 'Ready'"
 
 # Get a single resource with field selection
-kubectl debug-queries get --resource pod --name my-pod --namespace default --format json \
+kubectl debug-queries get --resource pod --name my-pod --namespace default --output json \
   --query "select Name, Status"
 ```
 
@@ -358,7 +358,7 @@ kubectl debug-queries events --namespace default \
   --query "Reason = 'BackOff' order by Last_Seen desc"
 
 # Warning events with field selection
-kubectl debug-queries events --namespace default --format json \
+kubectl debug-queries events --namespace default --output json \
   --query "select Reason, Message where Type = 'Warning'"
 
 # Events matching a pattern in the message
@@ -412,12 +412,12 @@ kubectl debug-queries logs --name my-pod --namespace default --tail 200 \
   --query "source ~= 'reconcile.*'"
 
 # JSON output with field selection
-kubectl debug-queries logs --name my-pod --namespace default --tail 200 --format json \
+kubectl debug-queries logs --name my-pod --namespace default --tail 200 --output json \
   --query "select timestamp, level, message where level = 'ERROR'"
 
 # JSON output: only entries that have extra fields
 kubectl debug-queries logs --name deployment/forklift-controller \
-  --namespace konveyor-forklift --tail 100 --format json \
+  --namespace konveyor-forklift --tail 100 --output json \
   --query "select timestamp, level, message, fields where fields is not null"
 ```
 
@@ -425,7 +425,7 @@ kubectl debug-queries logs --name deployment/forklift-controller \
 
 ```json
 {"command": "list", "flags": {"resource": "pods", "namespace": "default", "query": "where Status = 'Running'"}}
-{"command": "list", "flags": {"resource": "pods", "namespace": "default", "format": "json", "query": "select Name, Status where Restarts > 0"}}
+{"command": "list", "flags": {"resource": "pods", "namespace": "default", "output": "json", "query": "select Name, Status where Restarts > 0"}}
 {"command": "events", "flags": {"namespace": "default", "query": "where Type = 'Warning'"}}
 {"command": "logs", "flags": {"name": "my-pod", "namespace": "default", "tail": 100, "query": "where level = 'ERROR'"}}
 ```
