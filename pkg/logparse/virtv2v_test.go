@@ -376,3 +376,167 @@ func TestParseUnrecognizedLine(t *testing.T) {
 		t.Errorf("format: got %s, want %s", e.Format, FormatVirtV2V)
 	}
 }
+
+// --- virt-v2v-inspector specific tests ---
+
+const v2vInspectSample = `Building command: virt-v2v-inspector [-v -x -i libvirt -ic vpx://admin@10.6.46.248/DC/host/10.6.46.28 -- myvm]
+info: virt-v2v-inspector: virt-v2v 2.8.1rhel=10,release=18.el10_1 (x86_64)
+info: libvirt version: 11.5.0
+check_host_free_space: large_tmpdir=/var/tmp free_space=49187164160
+[   0.0] Setting up the source: -i libvirt -ic vpx://admin@10.6.46.248/DC/host/10.6.46.28 myvm
+libvirt xml is:
+nbdkit: debug: nbdkit 1.44.1 (nbdkit-1.44.1-4.el10_1)
+libnbd: debug: nbd1: nbd_connect_uri: enter: uri="nbd+unix:///disk.vmdk?socket=/tmp/v2v/in0"
+libnbd: debug: nbd1: nbd_get_size: leave: ret=17179869184
+[ 199.5] Finishing off`
+
+func TestDetectVirtV2VInspect(t *testing.T) {
+	det := DetectFormat(v2vInspectSample)
+	if det.Format != FormatVirtV2V {
+		t.Errorf("expected FormatVirtV2V, got %s", det.Format)
+	}
+	if det.Confidence < 0.8 {
+		t.Errorf("expected confidence >= 0.8, got %f", det.Confidence)
+	}
+}
+
+func TestParseLibnbd(t *testing.T) {
+	tests := []struct {
+		line    string
+		message string
+	}{
+		{
+			line:    `libnbd: debug: nbd1: nbd_connect_uri: enter: uri="nbd+unix:///disk.vmdk?socket=/tmp/v2v/in0"`,
+			message: `nbd1: nbd_connect_uri: enter: uri="nbd+unix:///disk.vmdk?socket=/tmp/v2v/in0"`,
+		},
+		{
+			line:    "libnbd: debug: nbd3: nbd_shutdown: leave: ret=0",
+			message: "nbd3: nbd_shutdown: leave: ret=0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.line, func(t *testing.T) {
+			e := parseVirtV2VLine(tt.line)
+			if !e.Parsed {
+				t.Fatal("expected line to be parsed")
+			}
+			if e.Logger != "libnbd" {
+				t.Errorf("logger: got %q, want %q", e.Logger, "libnbd")
+			}
+			if e.Level != "DEBUG" {
+				t.Errorf("level: got %q, want %q", e.Level, "DEBUG")
+			}
+			if e.Message != tt.message {
+				t.Errorf("message: got %q, want %q", e.Message, tt.message)
+			}
+		})
+	}
+}
+
+func TestParseCheckHostFreeSpace(t *testing.T) {
+	e := parseVirtV2VLine("check_host_free_space: large_tmpdir=/var/tmp free_space=49187164160")
+	if !e.Parsed {
+		t.Fatal("expected line to be parsed")
+	}
+	if e.Logger != "v2v" {
+		t.Errorf("logger: got %q, want %q", e.Logger, "v2v")
+	}
+	if e.Level != "INFO" {
+		t.Errorf("level: got %q, want %q", e.Level, "INFO")
+	}
+	if !strings.Contains(e.Message, "large_tmpdir") {
+		t.Errorf("message should contain 'large_tmpdir': %q", e.Message)
+	}
+}
+
+func TestParseLibvirtXMLMarker(t *testing.T) {
+	e := parseVirtV2VLine("libvirt xml is:")
+	if !e.Parsed {
+		t.Fatal("expected line to be parsed")
+	}
+	if e.Logger != "v2v" {
+		t.Errorf("logger: got %q, want %q", e.Logger, "v2v")
+	}
+	if e.Level != "INFO" {
+		t.Errorf("level: got %q, want %q", e.Level, "INFO")
+	}
+	if e.Message != "libvirt xml is:" {
+		t.Errorf("message: got %q, want %q", e.Message, "libvirt xml is:")
+	}
+}
+
+func TestParseRunningNbdkit(t *testing.T) {
+	e := parseVirtV2VLine("running nbdkit:")
+	if !e.Parsed {
+		t.Fatal("expected line to be parsed")
+	}
+	if e.Logger != "v2v" {
+		t.Errorf("logger: got %q, want %q", e.Logger, "v2v")
+	}
+	if e.Level != "INFO" {
+		t.Errorf("level: got %q, want %q", e.Level, "INFO")
+	}
+}
+
+func TestParseXMLLine(t *testing.T) {
+	tests := []struct {
+		name string
+		line string
+	}{
+		{"xml-declaration", `<?xml version='1.0' encoding='utf-8'?>`},
+		{"open-tag", `<v2v-inspection>`},
+		{"close-tag", `</v2v-inspection>`},
+		{"indented-tag", `  <disk index='0'>`},
+		{"domain-tag", `<domain type='vmware'>`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := parseVirtV2VLine(tt.line)
+			if !e.Parsed {
+				t.Fatal("expected line to be parsed")
+			}
+			if e.Logger != "xml" {
+				t.Errorf("logger: got %q, want %q", e.Logger, "xml")
+			}
+			if e.Level != "INFO" {
+				t.Errorf("level: got %q, want %q", e.Level, "INFO")
+			}
+			if e.Message != tt.line {
+				t.Errorf("message: got %q, want %q", e.Message, tt.line)
+			}
+		})
+	}
+}
+
+func TestParseCleanupLine(t *testing.T) {
+	e := parseVirtV2VLine("rm -rf -- '/tmp/v2vnbdkit.fS6XfN'")
+	if !e.Parsed {
+		t.Fatal("expected line to be parsed")
+	}
+	if e.Logger != "v2v" {
+		t.Errorf("logger: got %q, want %q", e.Logger, "v2v")
+	}
+	if e.Level != "INFO" {
+		t.Errorf("level: got %q, want %q", e.Level, "INFO")
+	}
+	if !strings.Contains(e.Message, "cleanup") {
+		t.Errorf("message should contain 'cleanup': %q", e.Message)
+	}
+}
+
+func TestSmartFormatVirtV2VInspect(t *testing.T) {
+	output := SmartFormat(v2vInspectSample)
+	if !strings.HasPrefix(output, "# format: virtv2v") {
+		t.Errorf("SmartFormat header should start with '# format: virtv2v', got: %s",
+			strings.SplitN(output, "\n", 2)[0])
+	}
+
+	if !strings.Contains(output, "libnbd:") {
+		t.Error("output should contain libnbd: logger prefix")
+	}
+	if !strings.Contains(output, "check_host_free_space") {
+		t.Error("output should contain check_host_free_space")
+	}
+}
