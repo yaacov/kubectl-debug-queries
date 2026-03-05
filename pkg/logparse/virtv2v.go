@@ -56,9 +56,21 @@ var (
 
 	// augeas errors: augeas failed to parse ...
 	v2vAugeasRe = regexp.MustCompile(`^augeas\s+failed\s+(.*)`)
+
+	// libnbd debug: libnbd: debug: nbd1: nbd_connect_uri: ...
+	v2vLibnbdRe = regexp.MustCompile(`^libnbd:\s+debug:\s+(\w+):\s+(.*)`)
+
+	// check_host_free_space: large_tmpdir=/var/tmp free_space=49187164160
+	v2vCheckHostRe = regexp.MustCompile(`^check_host_free_space:\s+(.*)`)
+
+	// XML content lines from libvirt XML dump or inspection output.
+	v2vXMLTagRe = regexp.MustCompile(`^\s*<[?/]?\w+`)
+
+	// Cleanup: rm -rf -- '/tmp/...'
+	v2vCleanupRe = regexp.MustCompile(`^rm\s+-rf\s+--\s+(.*)`)
 )
 
-// isVirtV2VLine returns true if the line looks like a virt-v2v conversion pod log line.
+// isVirtV2VLine returns true if the line looks like a virt-v2v or virt-v2v-inspector pod log line.
 func isVirtV2VLine(line string) bool {
 	switch {
 	case strings.HasPrefix(line, "Building command:"):
@@ -68,6 +80,8 @@ func isVirtV2VLine(line string) bool {
 	case strings.HasPrefix(line, "libguestfs:"):
 		return true
 	case strings.HasPrefix(line, "nbdkit:"):
+		return true
+	case strings.HasPrefix(line, "libnbd:"):
 		return true
 	case strings.HasPrefix(line, "guestfsd:"):
 		return true
@@ -79,6 +93,12 @@ func isVirtV2VLine(line string) bool {
 		return true
 	case strings.HasPrefix(line, "augeas "):
 		return true
+	case strings.HasPrefix(line, "check_host_free_space:"):
+		return true
+	case strings.HasPrefix(line, "libvirt xml is"):
+		return true
+	case strings.HasPrefix(line, "running nbdkit:"):
+		return true
 	case v2vPhaseRe.MatchString(line):
 		return true
 	default:
@@ -86,7 +106,7 @@ func isVirtV2VLine(line string) bool {
 	}
 }
 
-// parseVirtV2VLine parses a single virt-v2v conversion pod log line.
+// parseVirtV2VLine parses a single virt-v2v or virt-v2v-inspector pod log line.
 func parseVirtV2VLine(line string) LogEntry {
 	entry := LogEntry{RawLine: line, Format: FormatVirtV2V}
 
@@ -103,6 +123,9 @@ func parseVirtV2VLine(line string) LogEntry {
 	case strings.HasPrefix(line, "nbdkit:"):
 		return parseV2VNbdkit(line, entry)
 
+	case strings.HasPrefix(line, "libnbd:"):
+		return parseV2VLibnbd(line, entry)
+
 	case strings.HasPrefix(line, "guestfsd:"):
 		return parseV2VGuestfsd(line, entry)
 
@@ -117,6 +140,26 @@ func parseVirtV2VLine(line string) LogEntry {
 
 	case strings.HasPrefix(line, "augeas "):
 		return parseV2VAugeas(line, entry)
+
+	case strings.HasPrefix(line, "check_host_free_space:"):
+		return parseV2VCheckHost(line, entry)
+
+	case strings.HasPrefix(line, "libvirt xml is"):
+		entry.Parsed = true
+		entry.Logger = "v2v"
+		entry.Level = "INFO"
+		entry.Message = line
+		return entry
+
+	case strings.HasPrefix(line, "running nbdkit:"):
+		entry.Parsed = true
+		entry.Logger = "v2v"
+		entry.Level = "INFO"
+		entry.Message = line
+		return entry
+
+	case strings.HasPrefix(line, "rm -rf "):
+		return parseV2VCleanup(line, entry)
 
 	case strings.HasPrefix(line, "Starting server"):
 		entry.Parsed = true
@@ -159,6 +202,15 @@ func parseVirtV2VLine(line string) LogEntry {
 		entry.Level = "DEBUG"
 		entry.Timestamp = m[1] + "s"
 		entry.Message = m[2]
+		return entry
+	}
+
+	// XML content lines (libvirt XML dump or v2v-inspection output).
+	if v2vXMLTagRe.MatchString(line) {
+		entry.Parsed = true
+		entry.Logger = "xml"
+		entry.Level = "INFO"
+		entry.Message = line
 		return entry
 	}
 
@@ -309,5 +361,41 @@ func parseV2VAugeas(line string, entry LogEntry) LogEntry {
 	entry.Logger = "augeas"
 	entry.Level = "WARN"
 	entry.Message = "failed " + m[1]
+	return entry
+}
+
+func parseV2VLibnbd(line string, entry LogEntry) LogEntry {
+	m := v2vLibnbdRe.FindStringSubmatch(line)
+	if m == nil {
+		return entry
+	}
+	entry.Parsed = true
+	entry.Logger = "libnbd"
+	entry.Level = "DEBUG"
+	entry.Message = m[1] + ": " + m[2]
+	return entry
+}
+
+func parseV2VCheckHost(line string, entry LogEntry) LogEntry {
+	m := v2vCheckHostRe.FindStringSubmatch(line)
+	if m == nil {
+		return entry
+	}
+	entry.Parsed = true
+	entry.Logger = "v2v"
+	entry.Level = "INFO"
+	entry.Message = "check_host_free_space: " + m[1]
+	return entry
+}
+
+func parseV2VCleanup(line string, entry LogEntry) LogEntry {
+	m := v2vCleanupRe.FindStringSubmatch(line)
+	if m == nil {
+		return entry
+	}
+	entry.Parsed = true
+	entry.Logger = "v2v"
+	entry.Level = "INFO"
+	entry.Message = "cleanup: rm -rf " + m[1]
 	return entry
 }
