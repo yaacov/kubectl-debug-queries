@@ -16,8 +16,10 @@ var getCmd = &cobra.Command{
 Columns are auto-detected from the API server (same as kubectl get).
 All parameters are named flags.
 
-Use --query/-q for field selection with JSON/YAML output:
-  --query "select Name, Status" --output json`,
+Use --query/-q for field selection with JSON/YAML output.
+Fields must match the JSON object structure (use --output json to discover paths).
+
+  --query "select name, status.phase" --output json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resource, _ := cmd.Flags().GetString("resource")
 		name, _ := cmd.Flags().GetString("name")
@@ -45,7 +47,7 @@ func init() {
 	getCmd.Flags().String("name", "", "Resource name")
 	getCmd.Flags().String("namespace", "", "Namespace")
 	getCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
-	getCmd.Flags().StringP("query", "q", "", "TSL query for field selection (e.g. \"select Name, Status\")")
+	getCmd.Flags().StringP("query", "q", "", "TSL query for field selection using JSON field paths (e.g. \"select name, status.phase\")")
 	_ = getCmd.MarkFlagRequired("resource")
 	_ = getCmd.MarkFlagRequired("name")
 	_ = getCmd.MarkFlagRequired("namespace")

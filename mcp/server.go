@@ -40,7 +40,9 @@ func CreateServer(capturedHeaders http.Header) *mcpsdk.Server {
 			"Use debug_read with command \"get\" to get a specific resource. " +
 			"Use debug_read with command \"logs\" to get container logs (supports deployment/name, statefulset/name, etc.). " +
 			"Use debug_read with command \"events\" to list events. " +
-			"All commands support an optional \"query\" flag for TSL-based filtering (e.g. \"where Status = 'Running'\").",
+			"All commands support an optional \"query\" flag for TSL-based filtering. " +
+			"IMPORTANT: query fields must match the JSON object structure returned by the command (e.g. \"where status.phase = 'Running'\" for pods, \"where type = 'Warning'\" for events). " +
+			"Use output=json first to discover available field paths, then build queries using those paths.",
 	})
 
 	registerTools(server, capturedHeaders)
@@ -58,19 +60,26 @@ Subcommands (pass as "command"):
   logs    Retrieve container logs        (flags: name, namespace, container, previous, tail, since, sort_by, output, query)
   events  List Kubernetes events        (flags: namespace, all_namespaces, resource, name, sort_by, limit, output, query)
 
-The "query" flag accepts TSL (Tree Search Language) syntax for filtering:
-  "where Status = 'Running'"
-  "where Name ~= 'nginx-.*' order by Age desc limit 10"
-  "select Name, Status where Restarts > 5"
+The "query" flag accepts TSL (Tree Search Language) syntax for filtering.
+IMPORTANT: Query field names must match the actual JSON object structure returned by the command.
+Use output=json without a query first to discover the available field paths for each resource type.
 
-For JSON output, SELECT controls which fields appear. For table output, columns are unchanged.
+Common field paths for pods:   name, namespace, status.phase, metadata.labels, spec.nodeName, status.containerStatuses[0].restartCount
+Common field paths for events: type, reason, message, count, firstTimestamp, lastTimestamp, involvedObject.kind, involvedObject.name
+Shortcut fields: "name" and "namespace" are hoisted from metadata for convenience.
+
+Query examples:
+  "where status.phase = 'Running'"                                    Filter pods by phase
+  "where name ~= 'nginx-.*' order by metadata.creationTimestamp desc"  Regex match + sort
+  "select name, status.phase where status.phase = 'Running'"           Select fields (JSON output)
+  "where type = 'Warning'"                                             Filter events by type
 
 Examples:
   {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default"}}
-  {command: "list", flags: {resource: "pods", namespace: "kube-system", query: "where Status = 'Running'"}}
-  {command: "list", flags: {resource: "pods", namespace: "default", output: "json", query: "select Name, Status where Restarts > 0"}}
+  {command: "list", flags: {resource: "pods", namespace: "kube-system", query: "where status.phase = 'Running'"}}
+  {command: "list", flags: {resource: "pods", namespace: "default", output: "json", query: "select name, status.phase"}}
   {command: "logs", flags: {name: "my-pod", namespace: "default", tail: 100, query: "where level = 'ERROR'"}}
-  {command: "events", flags: {namespace: "default", query: "where Type = 'Warning'"}}`,
+  {command: "events", flags: {namespace: "default", query: "where type = 'Warning'"}}`,
 	}, wrapWithHeaders(handleDebugRead, capturedHeaders))
 
 	mcpsdk.AddTool(server, &mcpsdk.Tool{

@@ -16,10 +16,13 @@ var listCmd = &cobra.Command{
 Columns are auto-detected from the API server. Supports label selectors,
 sorting by any column, and row limiting. All parameters are named flags.
 
-Use --query/-q for TSL (Tree Search Language) filtering:
-  --query "where Status = 'Running'"
-  --query "where Name ~= 'nginx-.*' order by Age desc limit 10"
-  --query "select Name, Status where Restarts > 5"
+Use --query/-q for TSL (Tree Search Language) filtering on the JSON object
+structure. Use --output json (without --query) to discover field paths.
+Shortcut fields: "name" and "namespace" are hoisted from metadata.
+
+  --query "where status.phase = 'Running'"
+  --query "where name ~= 'nginx-.*' order by metadata.creationTimestamp desc limit 10"
+  --query "select name, status.phase where status.phase != 'Running'"
 
 For JSON output, SELECT controls which fields appear in the output.
 For table output, the original server-side columns are always shown.`,
@@ -60,7 +63,7 @@ func init() {
 	listCmd.Flags().Int("limit", 0, "Maximum number of rows to return")
 	listCmd.Flags().BoolP("all-namespaces", "A", false, "List across all namespaces")
 	listCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
-	listCmd.Flags().StringP("query", "q", "", "TSL query (e.g. \"where Status = 'Running'\", \"select Name, Status where Restarts > 5\")")
+	listCmd.Flags().StringP("query", "q", "", "TSL query using JSON field paths (e.g. \"where status.phase = 'Running'\")")
 	_ = listCmd.MarkFlagRequired("resource")
 	rootCmd.AddCommand(listCmd)
 }

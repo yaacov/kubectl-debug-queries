@@ -17,15 +17,19 @@ Flags:
   name       (required)  Resource name
   namespace  (required)  Namespace
   output     (optional)  Output format: markdown (default), table, json, yaml
-  query      (optional)  TSL query for field selection (e.g. "select Name, Status")
+  query      (optional)  TSL query for field selection (e.g. "select name, status.phase")
 
-Query examples:
-  "select Name, Status"                     Select specific fields (JSON/YAML output)
+IMPORTANT: Query fields must match the JSON object structure (use output=json to discover fields).
+Shortcut fields: "name" and "namespace" are hoisted from metadata for convenience.
+
+Query examples (pod fields):
+  "select name, status.phase"               Select specific fields (JSON/YAML output)
+  "select name, spec.nodeName"              Select node placement
 
 Examples:
   {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default"}}
   {command: "get", flags: {resource: "deployment", name: "nginx", namespace: "web", output: "json"}}
-  {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default", output: "json", query: "select Name, Status"}}`
+  {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default", output: "json", query: "select name, status.phase"}}`
 
 	case "list":
 		return `debug_read "list" — List Kubernetes resources
@@ -47,25 +51,33 @@ Query syntax (TSL — Tree Search Language):
   Supports: SELECT, WHERE, ORDER BY / SORT BY, LIMIT
   Operators: =, !=, <, >, <=, >=, like, ilike, ~= (regex), in, between, is null, is not null
   Logic: and, or, not
-  Column names with spaces use underscores: Last_Seen, Nominated_Node
 
-Query examples:
-  "where Status = 'Running'"                          Filter by column value
-  "where Name ~= 'nginx-.*'"                          Regex match
-  "where Restarts > 5 and Status != 'Running'"        Combined conditions
-  "where Status = 'Running' order by Name"             Filter and sort
-  "where Status = 'Running' order by Age desc limit 10"  Filter, sort descending, limit
-  "select Name, Status where Restarts > 0"             Select fields (JSON/YAML output only)
+IMPORTANT: Query fields must match the JSON object structure returned by the Kubernetes API,
+NOT the table column names. Use output=json without a query to discover field paths.
+Shortcut fields: "name" and "namespace" are hoisted from metadata for convenience.
+
+Common field paths for pods:
+  name, namespace, status.phase, spec.nodeName, metadata.labels,
+  status.containerStatuses[0].restartCount, metadata.creationTimestamp
+
+Query examples (for pods):
+  "where status.phase = 'Running'"                                        Filter by phase
+  "where name ~= 'nginx-.*'"                                              Regex match on name
+  "where status.containerStatuses[0].restartCount > 5"                     Filter by restarts
+  "where status.phase = 'Running' order by name"                           Filter and sort
+  "where status.phase = 'Running' order by metadata.creationTimestamp desc limit 10"
+  "select name, status.phase where status.phase != 'Running'"              Select fields (JSON/YAML only)
 
 Note: For table/markdown output, columns are always the server-side defaults.
       SELECT only affects JSON and YAML output.
+      The sort_by flag sorts by table column names; ORDER BY in queries sorts by JSON field paths.
 
 Examples:
   {command: "list", flags: {resource: "pods", namespace: "default"}}
   {command: "list", flags: {resource: "pods", namespace: "kube-system", selector: "app=nginx", sort_by: "name"}}
   {command: "list", flags: {resource: "deployments", all_namespaces: true, limit: 20}}
-  {command: "list", flags: {resource: "pods", namespace: "default", query: "where Status = 'Running'"}}
-  {command: "list", flags: {resource: "pods", namespace: "default", output: "json", query: "select Name, Status where Restarts > 0"}}`
+  {command: "list", flags: {resource: "pods", namespace: "default", query: "where status.phase = 'Running'"}}
+  {command: "list", flags: {resource: "pods", namespace: "default", output: "json", query: "select name, status.phase"}}`
 
 	case "logs":
 		return `debug_read "logs" — Retrieve container logs
@@ -95,8 +107,9 @@ Flags:
                           json   JSON array of parsed log entries
   query      (optional)  TSL query on parsed log fields (smart and json formats)
 
-Queryable log fields: timestamp, level, message, source, logger, raw_line, format, parsed
-Nested fields: fields.<key> (e.g. fields.request_id)
+Query fields come from the parsed log entry JSON structure:
+  timestamp, level, message, source, logger, raw_line, format, parsed
+  Nested fields: fields.<key> (e.g. fields.request_id)
 
 Query examples:
   "where level = 'ERROR'"                              Filter by log level
@@ -126,19 +139,25 @@ Flags:
   output          (optional)  Output format: markdown (default), table, json, yaml
   query           (optional)  TSL query for filtering, sorting, and field selection
 
-Query examples:
-  "where Type = 'Warning'"                             Filter by event type
-  "where Reason = 'BackOff'"                           Filter by reason
-  "where Type = 'Warning' order by Last_Seen desc"     Filter and sort
-  "select Reason, Message where Type = 'Warning'"      Select fields (JSON/YAML output)
+IMPORTANT: Query fields must match the JSON object structure of Kubernetes Event objects,
+NOT the table column names. Use output=json without a query to discover field paths.
 
-Note: Column names with spaces use underscores in queries: Last_Seen, First_Seen.
+Event JSON fields: type, reason, message, count, firstTimestamp, lastTimestamp,
+  involvedObject.kind, involvedObject.name, source.component, metadata.name, metadata.namespace
+
+Query examples:
+  "where type = 'Warning'"                                  Filter by event type
+  "where reason = 'BackOff'"                                Filter by reason
+  "where type = 'Warning' order by lastTimestamp desc"      Filter and sort by time
+  "select reason, message where type = 'Warning'"           Select fields (JSON/YAML output)
+
+Note: The sort_by flag sorts by table column names; ORDER BY in queries sorts by JSON field paths.
 
 Examples:
   {command: "events", flags: {namespace: "default"}}
   {command: "events", flags: {namespace: "default", resource: "Pod", name: "my-pod"}}
-  {command: "events", flags: {namespace: "default", query: "where Type = 'Warning'"}}
-  {command: "events", flags: {namespace: "default", output: "json", query: "select Reason, Message where Type = 'Warning'"}}`
+  {command: "events", flags: {namespace: "default", query: "where type = 'Warning'"}}
+  {command: "events", flags: {namespace: "default", output: "json", query: "select reason, message where type = 'Warning'"}}`
 
 	default:
 		lines := []string{
@@ -150,20 +169,27 @@ Examples:
 			"  logs    Retrieve container logs                     (flags: name, namespace, container, previous, tail, since, sort_by, output, query)",
 			"  events  List Kubernetes events                     (flags: namespace, all_namespaces, resource, name, sort_by, limit, output, query)",
 			"",
-			"All commands support an optional \"query\" flag using TSL (Tree Search Language) syntax:",
-			"  WHERE filtering:    \"where Status = 'Running'\"",
-			"  Regex matching:     \"where Name ~= 'nginx-.*'\"",
-			"  Sorting:            \"where Status = 'Running' order by Name desc\"",
-			"  Limiting:           \"where Status = 'Running' limit 10\"",
-			"  Field selection:    \"select Name, Status where Restarts > 0\" (JSON/YAML output)",
+			"All commands support an optional \"query\" flag using TSL (Tree Search Language) syntax.",
+			"IMPORTANT: Query fields must match the JSON object structure returned by the command.",
+			"Use output=json without a query to discover the available field paths for each resource type.",
+			"Shortcut fields: \"name\" and \"namespace\" are hoisted from metadata for convenience.",
+			"",
+			"Query examples:",
+			"  WHERE filtering:    \"where status.phase = 'Running'\"                          (pods)",
+			"  Regex matching:     \"where name ~= 'nginx-.*'\"",
+			"  Sorting:            \"where status.phase = 'Running' order by name desc\"",
+			"  Limiting:           \"where status.phase = 'Running' limit 10\"",
+			"  Field selection:    \"select name, status.phase\" (JSON/YAML output)",
+			"  Events:             \"where type = 'Warning'\"",
+			"  Logs:               \"where level = 'ERROR'\"",
 			"",
 			"Call debug_help(\"<command>\") for detailed flag descriptions and examples.",
 			"",
 			"QUICK EXAMPLES:",
 			`  {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default"}}`,
-			`  {command: "list", flags: {resource: "pods", namespace: "kube-system", query: "where Status = 'Running'"}}`,
+			`  {command: "list", flags: {resource: "pods", namespace: "kube-system", query: "where status.phase = 'Running'"}}`,
 			`  {command: "logs", flags: {name: "my-pod", namespace: "default", tail: 100, query: "where level = 'ERROR'"}}`,
-			`  {command: "events", flags: {namespace: "default", query: "where Type = 'Warning'"}}`,
+			`  {command: "events", flags: {namespace: "default", query: "where type = 'Warning'"}}`,
 		}
 		return strings.Join(lines, "\n")
 	}

@@ -62,7 +62,7 @@ func init() {
 	logsCmd.Flags().String("since", "", "Return logs newer than this duration (e.g. 1h, 30m)")
 	logsCmd.Flags().String("sort-by", "", "Sort order: time (default, oldest first) or time_desc (newest first)")
 	logsCmd.Flags().StringP("output", "o", "", "Output format: smart (default), raw, json")
-	logsCmd.Flags().StringP("query", "q", "", "TSL query on parsed log fields (e.g. \"where level = 'ERROR'\")")
+	logsCmd.Flags().StringP("query", "q", "", "TSL query on parsed log JSON fields (e.g. \"where level = 'ERROR'\")")
 	_ = logsCmd.MarkFlagRequired("name")
 	_ = logsCmd.MarkFlagRequired("namespace")
 	rootCmd.AddCommand(logsCmd)

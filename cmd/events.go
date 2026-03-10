@@ -16,10 +16,12 @@ var eventsCmd = &cobra.Command{
 Columns are auto-detected from the API server. Supports filtering by
 resource kind and name, sorting, and row limiting. All parameters are named flags.
 
-Use --query/-q for TSL (Tree Search Language) filtering:
-  --query "where Type = 'Warning'"
-  --query "where Reason = 'BackOff' order by Last_Seen desc"
-  --query "select Reason, Message where Type = 'Warning'" --output json`,
+Use --query/-q for TSL (Tree Search Language) filtering on the JSON object
+structure. Use --output json (without --query) to discover field paths.
+
+  --query "where type = 'Warning'"
+  --query "where reason = 'BackOff' order by lastTimestamp desc"
+  --query "select reason, message where type = 'Warning'" --output json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		namespace, _ := cmd.Flags().GetString("namespace")
 		resource, _ := cmd.Flags().GetString("resource")
@@ -57,6 +59,6 @@ func init() {
 	eventsCmd.Flags().Int("limit", 0, "Maximum number of rows to return")
 	eventsCmd.Flags().BoolP("all-namespaces", "A", false, "List events across all namespaces")
 	eventsCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
-	eventsCmd.Flags().StringP("query", "q", "", "TSL query (e.g. \"where Type = 'Warning'\", \"select Reason, Message\")")
+	eventsCmd.Flags().StringP("query", "q", "", "TSL query using JSON field paths (e.g. \"where type = 'Warning'\")")
 	rootCmd.AddCommand(eventsCmd)
 }
