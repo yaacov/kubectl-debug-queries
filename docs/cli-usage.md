@@ -180,6 +180,27 @@ kubectl debug-queries events --namespace default --output json \
 | `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
 
+## Shell Completion
+
+kubectl-debug-queries supports shell completion via the standard kubectl plugin completion mechanism. To enable it, create two small helper scripts on your `$PATH` alongside the kubectl-debug\_queries binary:
+
+```bash
+# Find the directory where kubectl-debug_queries is installed
+d="$(dirname "$(which kubectl-debug_queries)")"
+
+# Create the kubectl completion helper
+cat > "$d/kubectl_complete-debug_queries" << 'SCRIPT'
+#!/usr/bin/env bash
+kubectl-debug_queries __complete "$@"
+SCRIPT
+chmod +x "$d/kubectl_complete-debug_queries"
+
+# Create the oc completion helper (symlink to the kubectl one)
+ln -sf "$d/kubectl_complete-debug_queries" "$d/oc_complete-debug_queries"
+```
+
+After this, shell completion works for both `kubectl debug-queries` and `oc debug-queries` (requires that your shell has kubectl/oc completions loaded).
+
 ## Global Flags
 
 All commands accept standard kubectl flags:

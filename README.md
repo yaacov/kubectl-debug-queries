@@ -20,6 +20,8 @@ Once `kubectl-debug_queries` is on your `PATH`, kubectl automatically discovers 
 kubectl debug-queries --help
 ```
 
+To enable shell completion for both `kubectl debug-queries` and `oc debug-queries`, see [Shell Completion](docs/cli-usage.md#shell-completion).
+
 ## Quick Start
 
 ```bash
