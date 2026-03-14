@@ -88,5 +88,5 @@ jobs:
           done
           echo "All assets verified successfully!"
 
-      - name: Update Krew index
-        uses: rajatjindal/krew-release-bot@v0.0.46
+      # - name: Update Krew index
+      #   uses: rajatjindal/krew-release-bot@v0.0.46

@@ -4,23 +4,28 @@ Query Kubernetes resources, logs, and events — as a CLI and an MCP server for 
 
 ## Installation
 
-Download or build the binary, then place it on your `PATH` as `kubectl-debug_queries` (underscore required for kubectl plugin discovery):
+Install the latest release (Linux / macOS):
 
 ```bash
-# Build from source
-make build
-
-# Copy the binary to a directory in your PATH (note the underscore in the target name)
-sudo cp kubectl-debug-queries /usr/local/bin/kubectl-debug_queries
+curl -sSL https://raw.githubusercontent.com/yaacov/kubectl-debug-queries/main/install.sh | bash
 ```
 
-Once `kubectl-debug_queries` is on your `PATH`, kubectl automatically discovers it as a plugin and you can run it as `kubectl debug-queries`:
+This downloads the binary, verifies its checksum, and sets up shell completion. Installs to `~/.local/bin` by default.
+
+Or build from source:
+
+```bash
+make build
+cp kubectl-debug-queries ~/.local/bin/kubectl-debug_queries
+```
+
+Once installed, kubectl discovers it as a plugin:
 
 ```bash
 kubectl debug-queries --help
 ```
 
-To enable shell completion for both `kubectl debug-queries` and `oc debug-queries`, see [Shell Completion](docs/cli-usage.md#shell-completion).
+For more options (manual download, shell completion, uninstall), see [Installation](docs/installation.md).
 
 ## Quick Start
 
@@ -113,6 +118,7 @@ make deploy-olsconfig    # Register with OpenShift Lightspeed
 
 See the [docs/](docs/) directory for detailed guides:
 
+- [Installation](docs/installation.md)
 - [CLI Usage](docs/cli-usage.md)
 - [Query Language (TSL)](docs/query-language.md)
 - [MCP Server](docs/mcp-server.md)
