@@ -135,7 +135,7 @@ github.com/x448/float16
 # github.com/xlab/treeprint v1.2.0
 ## explicit; go 1.13
 github.com/xlab/treeprint
-# github.com/yaacov/tree-search-language/v6 v6.0.9
+# github.com/yaacov/tree-search-language/v6 v6.0.10
 ## explicit; go 1.23
 github.com/yaacov/tree-search-language/v6/pkg/parser
 github.com/yaacov/tree-search-language/v6/pkg/tsl
