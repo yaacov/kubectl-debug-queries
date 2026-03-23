@@ -38,6 +38,10 @@ Use --query/-q for TSL filtering on parsed log fields:
 		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
+		if namespace == "" {
+			namespace = defaultNamespace()
+		}
+
 		cfg := connection.ResolveRESTConfig(cmd.Context())
 		if cfg == nil {
 			return fmt.Errorf("no Kubernetes credentials available; provide --kubeconfig or --token")
@@ -64,6 +68,5 @@ func init() {
 	logsCmd.Flags().StringP("output", "o", "", "Output format: smart (default), raw, json")
 	logsCmd.Flags().StringP("query", "q", "", "TSL query on parsed log JSON fields (e.g. \"where level = 'ERROR'\")")
 	_ = logsCmd.MarkFlagRequired("name")
-	_ = logsCmd.MarkFlagRequired("namespace")
 	rootCmd.AddCommand(logsCmd)
 }

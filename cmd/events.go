@@ -33,7 +33,7 @@ structure. Use --output json (without --query) to discover field paths.
 		queryStr, _ := cmd.Flags().GetString("query")
 
 		if !allNamespaces && namespace == "" {
-			return fmt.Errorf("--namespace is required (or use --all-namespaces)")
+			namespace = defaultNamespace()
 		}
 
 		cfg := connection.ResolveRESTConfig(cmd.Context())

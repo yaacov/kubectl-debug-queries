@@ -26,9 +26,13 @@ kubectl debug-queries get --resource pod --name my-pod --namespace default --out
 |------|----------|---------|-------------|
 | `--resource` | yes | | Resource type (e.g. pod, deployment, service, configmap, node) |
 | `--name` | yes | | Resource name |
-| `--namespace` | yes | | Namespace |
+| `--namespace` | no | current context | Namespace |
 | `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering and field selection (see [Query Language](query-language.md)) |
+
+> **Note:** Positional arguments are also supported: `kubectl debug-queries get RESOURCE NAME [other flags...]`. Positional arguments and `--resource`/`--name` flags are mutually exclusive.
+
+> **Note:** When `--namespace` is omitted, the CLI defaults to the current kubeconfig context's namespace (e.g. set via `oc project` or `kubectl config set-context --current --namespace=NAMESPACE`), or `"default"` if none is configured.
 
 ### list
 
@@ -63,13 +67,17 @@ kubectl debug-queries list --resource pods --namespace default --output json \
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--resource` | yes | | Resource type (e.g. pods, deployments, services) |
-| `--namespace` | yes* | | Namespace (*required unless `--all-namespaces`) |
+| `--namespace` | no | current context | Namespace (defaults to current context unless `--all-namespaces`) |
 | `--all-namespaces` / `-A` | no | `false` | List across all namespaces |
 | `--selector` / `-l` | no | | Label selector (e.g. `app=nginx`, `env in (prod,staging)`) |
 | `--sort-by` | no | | Column name to sort by (case-insensitive) |
 | `--limit` | no | `0` | Maximum number of rows to return (0 = no limit) |
 | `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
+
+> **Note:** Positional arguments are also supported: `kubectl debug-queries list RESOURCE [other flags...]`. Positional arguments and the `--resource` flag are mutually exclusive.
+
+> **Note:** When `--namespace` is omitted (and `--all-namespaces` is not used), the CLI defaults to the current kubeconfig context's namespace (e.g. set via `oc project` or `kubectl config set-context --current --namespace=NAMESPACE`), or `"default"` if none is configured.
 
 ### logs
 
@@ -130,7 +138,7 @@ kubectl debug-queries logs --name my-pod --namespace default --tail 200 --output
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--name` | yes | | Pod name or resource/name (e.g. `my-pod`, `deployment/nginx`) |
-| `--namespace` | yes | | Namespace |
+| `--namespace` | no | current context | Namespace |
 | `--container` | no | | Container name (required for multi-container pods) |
 | `--previous` | no | `false` | Return logs from previous terminated container |
 | `--tail` | no | `0` | Number of lines from the end (0 = all) |
@@ -138,6 +146,8 @@ kubectl debug-queries logs --name my-pod --namespace default --tail 200 --output
 | `--sort-by` | no | `time` | `time` (oldest first) or `time_desc` (newest first) |
 | `--output` / `-o` | no | `smart` | `smart` (auto-detect and compact), `raw`, `json` |
 | `--query` / `-q` | no | | TSL query on parsed log fields (see [Query Language](query-language.md)) |
+
+> **Note:** When `--namespace` is omitted, the CLI defaults to the current kubeconfig context's namespace (e.g. set via `oc project` or `kubectl config set-context --current --namespace=NAMESPACE`), or `"default"` if none is configured.
 
 ### events
 
@@ -171,7 +181,7 @@ kubectl debug-queries events --namespace default --output json \
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--namespace` | yes* | | Namespace (*required unless `--all-namespaces`) |
+| `--namespace` | no | current context | Namespace (defaults to current context unless `--all-namespaces`) |
 | `--all-namespaces` / `-A` | no | `false` | List events across all namespaces |
 | `--resource` | no | | Filter by involved object kind (e.g. `Pod`, `Deployment`) |
 | `--name` | no | | Filter by involved object name |
@@ -179,6 +189,8 @@ kubectl debug-queries events --namespace default --output json \
 | `--limit` | no | `0` | Maximum number of rows to return (0 = no limit) |
 | `--output` / `-o` | no | `markdown` | Output format: `table`, `markdown`, `json`, `yaml` |
 | `--query` / `-q` | no | | TSL query for filtering, sorting, and field selection (see [Query Language](query-language.md)) |
+
+> **Note:** When `--namespace` is omitted (and `--all-namespaces` is not used), the CLI defaults to the current kubeconfig context's namespace (e.g. set via `oc project` or `kubectl config set-context --current --namespace=NAMESPACE`), or `"default"` if none is configured.
 
 ## Shell Completion
 
