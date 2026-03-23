@@ -45,8 +45,10 @@ func FormatTable(tbl *ServerTable, format string, opts ptable.Options, queryStr 
 
 	switch format {
 	case "json":
+		items = applyLimit(items, opts.Limit)
 		return formatJSONItems(items, queryOpts)
 	case "yaml":
+		items = applyLimit(items, opts.Limit)
 		return formatYAMLItems(items, queryOpts)
 	case "markdown":
 		opts.Markdown = true
@@ -149,6 +151,13 @@ func injectNamespaceColumn(columnNames []string, items []map[string]interface{})
 	}
 
 	return newCols, items
+}
+
+func applyLimit(items []map[string]interface{}, limit int) []map[string]interface{} {
+	if limit > 0 && len(items) > limit {
+		return items[:limit]
+	}
+	return items
 }
 
 // renderFilteredTable projects filtered full-struct items back to server-side
