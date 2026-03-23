@@ -12,6 +12,12 @@ curl -sSL https://raw.githubusercontent.com/yaacov/kubectl-debug-queries/main/in
 
 This downloads the binary, verifies its checksum, and sets up shell completion. Installs to `~/.local/bin` by default.
 
+Or install with [krew](https://krew.sigs.k8s.io/):
+
+```bash
+kubectl krew install debug-queries
+```
+
 Or build from source:
 
 ```bash

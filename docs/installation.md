@@ -28,6 +28,20 @@ The script installs three files:
 
 If the install directory is not in your `PATH`, the script prints instructions for adding it.
 
+## Install with Krew
+
+If you use [krew](https://krew.sigs.k8s.io/) (the kubectl plugin manager):
+
+```bash
+kubectl krew install debug-queries
+```
+
+To upgrade later:
+
+```bash
+kubectl krew upgrade debug-queries
+```
+
 ## Build from Source
 
 Requires Go 1.21+.
