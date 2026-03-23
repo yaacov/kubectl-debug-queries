@@ -36,8 +36,21 @@ For table output, the original server-side columns are always shown.`,
 		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
+		resourceFlag := cmd.Flags().Changed("resource")
+
+		switch {
+		case len(args) == 1 && !resourceFlag:
+			resource = args[0]
+		case len(args) == 0:
+			if resource == "" {
+				return fmt.Errorf("--resource is required")
+			}
+		default:
+			return fmt.Errorf("--resource is required")
+		}
+
 		if !allNamespaces && namespace == "" {
-			return fmt.Errorf("--namespace is required (or use --all-namespaces)")
+			namespace = defaultNamespace()
 		}
 
 		cfg := connection.ResolveRESTConfig(cmd.Context())
@@ -64,6 +77,5 @@ func init() {
 	listCmd.Flags().BoolP("all-namespaces", "A", false, "List across all namespaces")
 	listCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
 	listCmd.Flags().StringP("query", "q", "", "TSL query using JSON field paths (e.g. \"where status.phase = 'Running'\")")
-	_ = listCmd.MarkFlagRequired("resource")
 	rootCmd.AddCommand(listCmd)
 }

@@ -27,6 +27,25 @@ Fields must match the JSON object structure (use --output json to discover paths
 		format, _ := cmd.Flags().GetString("output")
 		queryStr, _ := cmd.Flags().GetString("query")
 
+		if namespace == "" {
+			namespace = defaultNamespace()
+		}
+
+		resourceFlag := cmd.Flags().Changed("resource")
+		nameFlag := cmd.Flags().Changed("name")
+
+		switch {
+		case len(args) == 2 && !resourceFlag && !nameFlag:
+			resource = args[0]
+			name = args[1]
+		case len(args) == 0:
+			if resource == "" || name == "" {
+				return fmt.Errorf("--resource and --name are required")
+			}
+		default:
+			return fmt.Errorf("--resource and --name are required")
+		}
+
 		cfg := connection.ResolveRESTConfig(cmd.Context())
 		if cfg == nil {
 			return fmt.Errorf("no Kubernetes credentials available; provide --kubeconfig or --token")
@@ -48,8 +67,5 @@ func init() {
 	getCmd.Flags().String("namespace", "", "Namespace")
 	getCmd.Flags().StringP("output", "o", "markdown", "Output format: table, markdown, json, yaml")
 	getCmd.Flags().StringP("query", "q", "", "TSL query for field selection using JSON field paths (e.g. \"select name, status.phase\")")
-	_ = getCmd.MarkFlagRequired("resource")
-	_ = getCmd.MarkFlagRequired("name")
-	_ = getCmd.MarkFlagRequired("namespace")
 	rootCmd.AddCommand(getCmd)
 }

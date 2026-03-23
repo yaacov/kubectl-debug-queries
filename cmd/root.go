@@ -85,6 +85,16 @@ func init() {
 	configFlags.AddFlags(rootCmd.PersistentFlags())
 }
 
+// defaultNamespace returns the namespace from the current kubeconfig context,
+// using the same resolution logic as kubectl (context namespace, in-cluster, or "default").
+func defaultNamespace() string {
+	ns, _, err := configFlags.ToRawKubeConfigLoader().Namespace()
+	if err != nil || ns == "" {
+		return "default"
+	}
+	return ns
+}
+
 // Execute runs the root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {

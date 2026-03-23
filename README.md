@@ -107,10 +107,12 @@ All commands use named flags only — no positional arguments. The CLI and MCP t
 
 | Command | Description | Required Flags |
 |---------|-------------|----------------|
-| `get` | Get a single resource | `--resource`, `--name`, `--namespace` |
-| `list` | List resources | `--resource`, `--namespace` (or `--all-namespaces` / `-A`) |
+| `get` | Get a single resource | `--resource`, `--name`, `--namespace` * |
+| `list` | List resources | `--resource`, `--namespace` (or `--all-namespaces` / `-A`) * |
 | `logs` | Retrieve container logs | `--name`, `--namespace` |
 | `events` | List events | `--namespace` (or `--all-namespaces` / `-A`) |
+
+\* `get` and `list` also accept positional arguments as an alternative to `--resource`/`--name` flags (see [CLI Usage](docs/cli-usage.md)).
 
 ## Deploy on OpenShift
 
