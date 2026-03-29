@@ -94,19 +94,19 @@ Omit command for an overview of all subcommands.`,
 	}, wrapWithHeaders(handleDebugHelp, capturedHeaders))
 }
 
-func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input DebugReadInput) (*mcpsdk.CallToolResult, struct{}, error) {
+func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input DebugReadInput) (*mcpsdk.CallToolResult, any, error) {
 	if req.Extra != nil && req.Extra.Header != nil {
 		ctx = connection.WithCredsFromHeaders(ctx, req.Extra.Header)
 	}
 
 	cfg := connection.ResolveRESTConfig(ctx)
 	if cfg == nil {
-		return textResult("Kubernetes credentials not configured. Provide them via --kubeconfig, --token flag, or Authorization header."), struct{}{}, nil
+		return textResult("Kubernetes credentials not configured. Provide them via --kubeconfig, --token flag, or Authorization header."), nil, nil
 	}
 
 	command := strings.TrimSpace(strings.ToLower(input.Command))
 	if command == "" {
-		return textResult("Missing required field 'command'. Use one of: get, list, logs, events.\nCall debug_help for details."), struct{}{}, nil
+		return textResult("Missing required field 'command'. Use one of: get, list, logs, events.\nCall debug_help for details."), nil, nil
 	}
 
 	flags := input.Flags
@@ -123,7 +123,7 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 
 	clients, err := kube.NewClients(cfg)
 	if err != nil {
-		return textResult(fmt.Sprintf("Failed to create Kubernetes client: %v", err)), struct{}{}, nil
+		return textResult(fmt.Sprintf("Failed to create Kubernetes client: %v", err)), nil, nil
 	}
 
 	t0 := time.Now()
@@ -169,27 +169,27 @@ func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input Deb
 			kube.FlagStr(flags, "output"),
 			kube.FlagStr(flags, "query"))
 	default:
-		return textResult(fmt.Sprintf("Unknown command %q. Available: get, list, logs, events.\nCall debug_help(\"%s\") for details.", command, command)), struct{}{}, nil
+		return textResult(fmt.Sprintf("Unknown command %q. Available: get, list, logs, events.\nCall debug_help(\"%s\") for details.", command, command)), nil, nil
 	}
 
 	if err != nil {
 		format := kube.FlagStr(flags, "output")
 		if kube.IsJSONFormat(format) {
-			return textResult(kube.JSONError(err)), struct{}{}, nil
+			return textResult(kube.JSONError(err)), nil, nil
 		}
-		return textResult(friendlyError(command, err)), struct{}{}, nil
+		return textResult(friendlyError(command, err)), nil, nil
 	}
 
 	klog.V(1).Infof("debug_read %s completed in %.3fs", command, time.Since(t0).Seconds())
 	if result == "" && kube.IsJSONFormat(kube.FlagStr(flags, "output")) {
-		return textResult(kube.JSONEmpty), struct{}{}, nil
+		return textResult(kube.JSONEmpty), nil, nil
 	}
-	return textResult(result), struct{}{}, nil
+	return textResult(result), nil, nil
 }
 
-func handleDebugHelp(_ context.Context, _ *mcpsdk.CallToolRequest, input DebugHelpInput) (*mcpsdk.CallToolResult, struct{}, error) {
+func handleDebugHelp(_ context.Context, _ *mcpsdk.CallToolRequest, input DebugHelpInput) (*mcpsdk.CallToolResult, any, error) {
 	command := strings.TrimSpace(strings.ToLower(input.Command))
-	return textResult(help.GenerateHelp(command)), struct{}{}, nil
+	return textResult(help.GenerateHelp(command)), nil, nil
 }
 
 func textResult(text string) *mcpsdk.CallToolResult {
