@@ -94,18 +94,24 @@ func ResolvePodName(ctx context.Context, clients *Clients, name, namespace strin
 }
 
 // ResolveContainer picks the best container when the user didn't specify one.
-// Returns "" if the pod has a single container (Kubernetes handles it).
-// For multi-container pods it filters out known sidecars and prefers the first
-// application container.
-func ResolveContainer(ctx context.Context, clients *Clients, podName, namespace string) (string, error) {
+// Returns ("", nil, nil) if the pod has a single container (Kubernetes handles it).
+// For multi-container pods it filters out known sidecars, prefers the first
+// application container, and returns all container names so callers can inform
+// the user which container was auto-selected.
+func ResolveContainer(ctx context.Context, clients *Clients, podName, namespace string) (string, []string, error) {
 	pod, err := clients.Clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
-		return "", fmt.Errorf("fetching pod %s: %w", podName, err)
+		return "", nil, fmt.Errorf("fetching pod %s: %w", podName, err)
 	}
 
 	containers := pod.Spec.Containers
 	if len(containers) <= 1 {
-		return "", nil
+		return "", nil, nil
+	}
+
+	allNames := make([]string, len(containers))
+	for i, c := range containers {
+		allNames[i] = c.Name
 	}
 
 	// Collect non-sidecar containers.
@@ -118,7 +124,7 @@ func ResolveContainer(ctx context.Context, clients *Clients, podName, namespace 
 
 	if len(primary) == 1 {
 		klog.V(2).Infof("[resolve] auto-selected container %q (only non-sidecar)", primary[0])
-		return primary[0], nil
+		return primary[0], allNames, nil
 	}
 
 	// If all were filtered (unlikely) or multiple remain, fall back to the
@@ -126,16 +132,12 @@ func ResolveContainer(ctx context.Context, clients *Clients, podName, namespace 
 	if len(primary) == 0 {
 		chosen := containers[0].Name
 		klog.V(2).Infof("[resolve] auto-selected container %q (first container, all matched sidecar list)", chosen)
-		return chosen, nil
+		return chosen, allNames, nil
 	}
 
 	chosen := primary[0]
-	names := make([]string, len(containers))
-	for i, c := range containers {
-		names[i] = c.Name
-	}
-	klog.V(2).Infof("[resolve] auto-selected container %q from %v (first non-sidecar)", chosen, names)
-	return chosen, nil
+	klog.V(2).Infof("[resolve] auto-selected container %q from %v (first non-sidecar)", chosen, allNames)
+	return chosen, allNames, nil
 }
 
 // workloadSelector returns the label selector string for the pods managed by a workload.

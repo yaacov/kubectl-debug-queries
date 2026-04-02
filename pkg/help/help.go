@@ -13,7 +13,9 @@ func GenerateHelp(command string) string {
 Returns the resource in server-side table format (same columns as kubectl get).
 
 Flags:
-  resource   (required)  Resource type (e.g. pod, deployment, service, configmap, node, virtualmachine)
+  resource   (required)  Resource type (e.g. pod, deployment, service, node).
+                          CRDs: use short plural names (e.g. plans, networkmaps, storagemaps).
+                          Also supports resource.group format (e.g. plans.forklift.konveyor.io).
   name       (required)  Resource name
   namespace  (required)  Namespace
   output     (optional)  Output format: markdown (default), table, json, yaml
@@ -38,8 +40,12 @@ Returns resources in server-side table format with auto-detected columns.
 Supports label selectors, sorting by any column, and row limiting.
 
 Flags:
-  resource        (required)  Resource type (e.g. pods, deployments, services, nodes)
-  namespace       (required)  Namespace (required unless all_namespaces is true)
+  resource        (required)  Resource type (e.g. pods, deployments, services, nodes).
+                               CRDs: use short plural names (e.g. plans, networkmaps).
+                               Also supports resource.group format (e.g. plans.forklift.konveyor.io).
+  namespace       (required)  Namespace (required unless all_namespaces is true).
+                               For cluster-scoped resources (storageclasses, nodes, etc.),
+                               use all_namespaces: true.
   all_namespaces  (optional)  Boolean. List across all namespaces (overrides namespace)
   selector        (optional)  Label selector (e.g. "app=nginx", "env in (prod,staging)")
   sort_by         (optional)  Column name to sort by (case-insensitive, e.g. "name", "age", "status")
@@ -96,10 +102,12 @@ than raw output. Unparseable lines pass through with a [    ] prefix.
 Flags:
   name       (required)  Pod name or resource/name (e.g. "my-pod", "deployment/nginx")
   namespace  (required)  Namespace
-  container  (optional)  Container name (required for multi-container pods)
+  container  (optional)  Container name. For multi-container pods, the first non-sidecar
+                          container is auto-selected if omitted.
   previous   (optional)  Boolean. Return logs from the previous terminated container
   tail       (optional)  Number of lines from the end of the log to return
-  since      (optional)  Duration string (e.g. "1h", "30m", "5s") — return logs newer than this
+  since      (optional)  Duration string (e.g. "1h", "30m", "5s") — return logs newer
+                          than this. Returns empty if no logs exist in the time window.
   sort_by    (optional)  "time" (default, oldest first) or "time_desc" (newest first)
   output     (optional)  Output format: smart (default), raw, json
                           smart  Auto-detect and render compact (default)
@@ -107,22 +115,41 @@ Flags:
                           json   JSON array of parsed log entries
   query      (optional)  TSL query on parsed log fields (smart and json formats)
 
-Query fields come from the parsed log entry JSON structure:
-  timestamp, level, message, source, logger, raw_line, format, parsed
-  Nested fields: fields.<key> (e.g. fields.request_id)
-
-Query examples:
-  "where level = 'ERROR'"                              Filter by log level
-  "where message ~= 'timeout'"                         Regex match on message
-  "where level = 'ERROR' or level = 'WARN'"            Multiple levels
-  "select timestamp, level, message where level = 'ERROR'"  Select fields (JSON only)
+Query fields:
+  timestamp, level, message, logger, source, raw_line, format, parsed
+  Nested fields: fields.<key> — extra key=val pairs from structured logs, e.g.:
+    fields.plan, fields.provider, fields.map, fields.condition, fields.deployment
 
 Examples:
-  {command: "logs", flags: {name: "my-pod", namespace: "default"}}
-  {command: "logs", flags: {name: "deployment/nginx", namespace: "default", tail: 100}}
-  {command: "logs", flags: {name: "my-pod", namespace: "default", tail: 200, query: "where level = 'ERROR'"}}
-  {command: "logs", flags: {name: "my-pod", namespace: "default", output: "json", query: "select timestamp, level, message where level = 'ERROR'"}}
-  {command: "logs", flags: {name: "my-pod", namespace: "default", previous: true, tail: 50}}`
+  # Step 1: discover field names and values — always start here
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 5, output: "json"}}
+
+  # Filter by level (levels are normalized to uppercase: INFO, ERROR, WARN, DEBUG)
+  {command: "logs", flags: {name: "deployment/nginx", namespace: "default", tail: 200, query: "where level = 'ERROR'"}}
+
+  # Filter by logger (JSON/zap logs set "logger", e.g. "plan", "provider", "storageMap")
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 100, query: "where logger ~= 'plan.*'"}}
+
+  # Filter by source file (klog logs set "source", e.g. "controller.go:42")
+  {command: "logs", flags: {name: "my-pod", namespace: "ns", tail: 100, query: "where source ~= 'controller.*'"}}
+
+  # Full-text search when you don't know which field has the value
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 200, query: "where raw_line ~= '.*my-resource.*'"}}
+
+  # Filter by structured fields (use regex — values are flattened strings)
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 200, query: "where fields.provider ~= '.*my-provider.*'"}}
+
+  # Select specific fields (JSON output only)
+  {command: "logs", flags: {name: "my-pod", namespace: "ns", output: "json", query: "select timestamp, level, message where level = 'ERROR'"}}
+
+  # Multi-container pod — specify which container
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", container: "sidecar", tail: 50}}
+
+  # Previous terminated container
+  {command: "logs", flags: {name: "my-pod", namespace: "default", previous: true, tail: 50}}
+
+  # Newest-first ordering
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 200, sort_by: "time_desc", query: "where level = 'ERROR'"}}`
 
 	case "events":
 		return `debug_read "events" — List Kubernetes events

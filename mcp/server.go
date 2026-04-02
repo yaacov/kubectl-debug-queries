@@ -73,12 +73,19 @@ Query examples:
   "where name ~= 'nginx-.*' order by metadata.creationTimestamp desc"  Regex match + sort
   "select name, status.phase where status.phase = 'Running'"           Select fields (JSON output)
   "where type = 'Warning'"                                             Filter events by type
+  "where level = 'ERROR'"                                              Log levels (always UPPERCASE)
+  "where logger ~= 'plan.*'"                                          Filter logs by logger (JSON/zap)
+  "where raw_line ~= '.*search-term.*'"                                Full-text log search
 
 Examples:
   {command: "get", flags: {resource: "pod", name: "my-pod", namespace: "default"}}
   {command: "list", flags: {resource: "pods", namespace: "kube-system", query: "where status.phase = 'Running'"}}
   {command: "list", flags: {resource: "pods", namespace: "default", output: "json", query: "select name, status.phase"}}
-  {command: "logs", flags: {name: "my-pod", namespace: "default", tail: 100, query: "where level = 'ERROR'"}}
+  # Discover log field names — always start here
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 5, output: "json"}}
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", tail: 100, query: "where level = 'ERROR'"}}
+  {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", container: "sidecar", tail: 50}}
+  {command: "logs", flags: {name: "my-pod", namespace: "ns", output: "json", query: "select timestamp, level, message where level = 'ERROR'"}}
   {command: "events", flags: {namespace: "default", query: "where type = 'Warning'"}}`,
 	}, wrapWithHeaders(handleDebugRead, capturedHeaders))
 
