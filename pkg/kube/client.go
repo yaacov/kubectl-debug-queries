@@ -59,9 +59,20 @@ func (c *Clients) resolveGVR(resource string) (schema.GroupVersionResource, erro
 	}
 
 	lower := strings.ToLower(resource)
+
+	// Support group-qualified names like "plans.forklift.konveyor.io".
+	var wantGroup string
+	if dot := strings.IndexByte(lower, '.'); dot > 0 {
+		wantGroup = lower[dot+1:]
+		lower = lower[:dot]
+	}
+
 	for _, list := range apiResources {
 		gv, parseErr := schema.ParseGroupVersion(list.GroupVersion)
 		if parseErr != nil {
+			continue
+		}
+		if wantGroup != "" && !strings.EqualFold(gv.Group, wantGroup) {
 			continue
 		}
 		for _, r := range list.APIResources {

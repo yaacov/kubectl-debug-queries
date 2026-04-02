@@ -33,10 +33,15 @@ func Logs(ctx context.Context, clients *Clients, name, namespace, container stri
 		return "", err
 	}
 
+	var containerAutoSelected []string
 	if container == "" {
-		container, err = ResolveContainer(ctx, clients, podName, namespace)
+		var allContainers []string
+		container, allContainers, err = ResolveContainer(ctx, clients, podName, namespace)
 		if err != nil {
 			return "", err
+		}
+		if len(allContainers) > 1 {
+			containerAutoSelected = allContainers
 		}
 	}
 
@@ -79,13 +84,27 @@ func Logs(ctx context.Context, clients *Clients, name, namespace, container stri
 		result = reverseLines(result)
 	}
 
+	var autoSelectHeader string
+	if len(containerAutoSelected) > 0 {
+		autoSelectHeader = fmt.Sprintf("# auto-selected container: %s (pod has %d containers: %s)\n",
+			container, len(containerAutoSelected), strings.Join(containerAutoSelected, ", "))
+	}
+
 	switch strings.ToLower(format) {
 	case "raw":
-		return result, nil
+		return autoSelectHeader + result, nil
 	case "json":
-		return formatLogsJSON(result, queryStr)
+		out, err := formatLogsJSON(result, queryStr)
+		if err != nil {
+			return "", err
+		}
+		return out, nil
 	default:
-		return formatLogsSmart(result, queryStr)
+		out, err := formatLogsSmart(result, queryStr)
+		if err != nil {
+			return "", err
+		}
+		return autoSelectHeader + out, nil
 	}
 }
 
