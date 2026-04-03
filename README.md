@@ -35,6 +35,8 @@ For more options (manual download, shell completion, uninstall), see [Installati
 
 ## Quick Start
 
+Query resources, logs and events using an SQL like [query language](docs/query-language.md).
+
 ```bash
 # Get pod logs (newest first, auto-detected smart format)
 kubectl debug-queries logs --name my-pod --namespace default --tail 100 --sort-by time_desc
