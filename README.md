@@ -36,15 +36,6 @@ For more options (manual download, shell completion, uninstall), see [Installati
 ## Quick Start
 
 ```bash
-# Get a single resource
-kubectl debug-queries get --resource pod --name my-pod --namespace default
-
-# List resources with sorting and limits
-kubectl debug-queries list --resource pods --namespace kube-system --sort-by name --limit 10
-
-# List across all namespaces
-kubectl debug-queries list --resource deployments --all-namespaces
-
 # Get pod logs (newest first, auto-detected smart format)
 kubectl debug-queries logs --name my-pod --namespace default --tail 100 --sort-by time_desc
 
