@@ -1,6 +1,6 @@
 # kubectl-debug-queries
 
-Query Kubernetes resources, logs, and events — as a CLI and an MCP server for AI assistants.
+Query Kubernetes resources, logs, and events using SQL like query language — as a CLI and an MCP server for AI assistants.
 
 ## Installation
 
