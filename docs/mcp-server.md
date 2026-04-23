@@ -12,20 +12,20 @@ For local AI assistant integration (Claude Desktop, Cursor IDE).
 kubectl debug-queries mcp-server
 ```
 
-### SSE (HTTP)
+### HTTP (Streamable HTTP)
 
 For network-accessible deployments (OpenShift Lightspeed, remote clients).
 
 ```bash
-kubectl debug-queries mcp-server --sse --port 8080
-kubectl debug-queries mcp-server --sse --port 8443 --cert-file tls.crt --key-file tls.key
+kubectl debug-queries mcp-server --http --port 8080
+kubectl debug-queries mcp-server --http --port 8443 --cert-file tls.crt --key-file tls.key
 ```
 
 **Flags:**
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--sse` | `false` | Enable SSE mode over HTTP |
+| `--http` | `false` | Enable HTTP mode using Streamable HTTP transport |
 | `--port` | `9091` | Listen port |
 | `--host` | `0.0.0.0` | Bind address |
 | `--cert-file` | | TLS certificate (enables HTTPS) |
@@ -98,21 +98,21 @@ Settings → MCP → Add Server:
 - **Command:** kubectl
 - **Args:** debug-queries mcp-server
 
-### SSE Mode (remote)
+### HTTP Mode (remote)
 
-Point the client at the SSE endpoint:
+Point the client at the HTTP endpoint:
 
 ```
-http://<host>:<port>/sse
+http://<host>:<port>/mcp
 ```
 
-## SSE Authentication
+## HTTP Authentication
 
-In SSE mode, per-session credentials are passed via HTTP headers:
+In HTTP mode, per-request credentials are passed via HTTP headers:
 
 | Header | Description |
 |--------|-------------|
 | `Authorization: Bearer <token>` | Bearer token for Kubernetes auth |
 | `X-Kubernetes-Server: <url>` | Kubernetes API server URL |
 
-**Precedence:** HTTP headers (per-session) > CLI flags > kubeconfig
+**Precedence:** HTTP headers (per-request) > CLI flags > kubeconfig

@@ -4,7 +4,6 @@ package mcp
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -29,7 +28,10 @@ type DebugHelpInput struct {
 }
 
 // CreateServer creates an MCP server with debug tools registered.
-func CreateServer(capturedHeaders http.Header) *mcpsdk.Server {
+// In HTTP mode the SDK populates req.Extra.Header on every POST with
+// that request's HTTP headers, giving each tool call fresh auth credentials.
+// In stdio mode there are no HTTP headers and we fall back to CLI defaults.
+func CreateServer() *mcpsdk.Server {
 	server := mcpsdk.NewServer(&mcpsdk.Implementation{
 		Name:    "kubectl-debug-queries",
 		Version: version.Version,
@@ -45,11 +47,11 @@ func CreateServer(capturedHeaders http.Header) *mcpsdk.Server {
 			"Use output=json first to discover available field paths, then build queries using those paths.",
 	})
 
-	registerTools(server, capturedHeaders)
+	registerTools(server)
 	return server
 }
 
-func registerTools(server *mcpsdk.Server, capturedHeaders http.Header) {
+func registerTools(server *mcpsdk.Server) {
 	mcpsdk.AddTool(server, &mcpsdk.Tool{
 		Name: "debug_read",
 		Description: `Query Kubernetes resources, logs, and events. Use debug_help for flag details.
@@ -87,7 +89,7 @@ Examples:
   {command: "logs", flags: {name: "deployment/my-app", namespace: "ns", container: "sidecar", tail: 50}}
   {command: "logs", flags: {name: "my-pod", namespace: "ns", output: "json", query: "select timestamp, level, message where level = 'ERROR'"}}
   {command: "events", flags: {namespace: "default", query: "where type = 'Warning'"}}`,
-	}, wrapWithHeaders(handleDebugRead, capturedHeaders))
+	}, handleDebugRead)
 
 	mcpsdk.AddTool(server, &mcpsdk.Tool{
 		Name: "debug_help",
@@ -98,7 +100,7 @@ available flags and their meaning.
 
 Commands: get, list, logs, events
 Omit command for an overview of all subcommands.`,
-	}, wrapWithHeaders(handleDebugHelp, capturedHeaders))
+	}, handleDebugHelp)
 }
 
 func handleDebugRead(ctx context.Context, req *mcpsdk.CallToolRequest, input DebugReadInput) (*mcpsdk.CallToolResult, any, error) {
@@ -202,20 +204,6 @@ func handleDebugHelp(_ context.Context, _ *mcpsdk.CallToolRequest, input DebugHe
 func textResult(text string) *mcpsdk.CallToolResult {
 	return &mcpsdk.CallToolResult{
 		Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: text}},
-	}
-}
-
-func wrapWithHeaders[In, Out any](
-	handler func(context.Context, *mcpsdk.CallToolRequest, In) (*mcpsdk.CallToolResult, Out, error),
-	headers http.Header,
-) func(context.Context, *mcpsdk.CallToolRequest, In) (*mcpsdk.CallToolResult, Out, error) {
-	return func(ctx context.Context, req *mcpsdk.CallToolRequest, input In) (*mcpsdk.CallToolResult, Out, error) {
-		if req.Extra == nil && headers != nil {
-			req.Extra = &mcpsdk.RequestExtra{Header: headers}
-		} else if req.Extra != nil && req.Extra.Header == nil && headers != nil {
-			req.Extra.Header = headers
-		}
-		return handler(ctx, req, input)
 	}
 }
 

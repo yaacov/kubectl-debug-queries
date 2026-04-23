@@ -68,8 +68,8 @@ kubectl debug-queries logs --name deployment/forklift-controller \
 # MCP server (stdio, for Claude Desktop / Cursor IDE)
 kubectl debug-queries mcp-server
 
-# MCP server (SSE, for OpenShift Lightspeed)
-kubectl debug-queries mcp-server --sse --port 8080
+# MCP server (HTTP, for OpenShift Lightspeed)
+kubectl debug-queries mcp-server --http --port 8080
 
 # MCP server from container image
 podman run --rm -p 8080:8080 \

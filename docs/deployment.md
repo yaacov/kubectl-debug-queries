@@ -8,7 +8,7 @@ Deploy the kubectl-debug-queries MCP server on an OpenShift cluster for use with
 ┌───────────────────┐     ┌───────────────────────────┐     ┌───────────────┐
 │  OpenShift        │     │  kubectl-debug-queries    │     │  Kubernetes   │
 │  Lightspeed /     │────▶│  MCP Server               │────▶│  API Server   │
-│  AI Client        │ SSE │  (openshift-monitoring)   │     │               │
+│  AI Client        │HTTP │  (openshift-monitoring)   │     │               │
 └───────────────────┘     └───────────────────────────┘     └───────────────┘
         │                          │
         │  Authorization:          │  Bearer <user-token>
@@ -52,7 +52,7 @@ oc apply -f deploy/mcp-server.yaml
 
 This creates in `openshift-monitoring`:
 - **ServiceAccount** `kubectl-debug-queries-mcp-server`
-- **Deployment** running the MCP server in SSE mode on port 8080
+- **Deployment** running the MCP server in HTTP mode using Streamable HTTP transport on port 8080
 - **Service** (ClusterIP) exposing port 8080
 
 The deployment sets `MCP_KUBE_SERVER=https://kubernetes.default.svc` and `MCP_KUBE_INSECURE=true` so the server can reach the in-cluster K8s API.
@@ -78,7 +78,7 @@ Creates a Route with TLS edge termination. Get the URL:
 
 ```bash
 oc get route kubectl-debug-queries-mcp-server -n openshift-monitoring \
-  -o jsonpath='https://{.spec.host}/sse'
+  -o jsonpath='https://{.spec.host}/mcp'
 ```
 
 ## Container Image

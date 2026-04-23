@@ -206,7 +206,7 @@ deploy-route:
 	@echo "Creating route to expose MCP server..."
 	oc apply -f deploy/mcp-route.yaml
 	@echo "Route created. Access URL:"
-	@oc get route kubectl-debug-queries-mcp-server -n openshift-monitoring -o jsonpath='https://{.spec.host}/sse{"\n"}' 2>/dev/null || echo "  (route not ready yet)"
+	@oc get route kubectl-debug-queries-mcp-server -n openshift-monitoring -o jsonpath='https://{.spec.host}/mcp{"\n"}' 2>/dev/null || echo "  (route not ready yet)"
 
 ## undeploy-route: Remove the external route for the MCP server
 .PHONY: undeploy-route

@@ -41,9 +41,9 @@ kubectl debug-queries list --resource pods --namespace default \
   --kubeconfig /path/to/config --context my-cluster
 ```
 
-## SSE Mode (MCP Server)
+## HTTP Mode (MCP Server)
 
-In SSE mode, per-session credentials can be provided via HTTP headers, which take highest priority:
+In HTTP mode, per-request credentials can be provided via HTTP headers, which take highest priority:
 
 ```
 Authorization: Bearer <token>
@@ -56,7 +56,7 @@ This allows a single MCP server instance to serve multiple users, each authentic
 
 Three tiers (highest priority first):
 
-1. **SSE HTTP headers** (per-session) — `Authorization: Bearer <token>`, `X-Kubernetes-Server: <url>`
+1. **HTTP headers** (per-request) — `Authorization: Bearer <token>`, `X-Kubernetes-Server: <url>`
 2. **CLI defaults** — kubeconfig flags (`--kubeconfig`, `--context`, `--token`, `--server`)
 3. **Fallback** — default kubeconfig from `$KUBECONFIG` or `~/.kube/config`
 
