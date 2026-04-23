@@ -1,7 +1,7 @@
 // Package connection provides credential resolution for kubectl-debug-queries.
 //
 // Credentials flow through three tiers (highest priority first):
-//  1. SSE HTTP headers (per-session)
+//  1. HTTP headers (per-request)
 //  2. CLI defaults (kubeconfig via client-go)
 //  3. Auto-discovered from kubeconfig
 package connection
@@ -98,7 +98,7 @@ func WithCredsFromHeaders(ctx context.Context, headers http.Header) context.Cont
 			Insecure: true,
 		},
 	}
-	klog.V(2).Infof("[auth] Built rest.Config from SSE headers (server=%s, token-len=%d)", server, len(token))
+	klog.V(2).Infof("[auth] Built rest.Config from HTTP headers (server=%s, token-len=%d)", server, len(token))
 	return WithRESTConfig(ctx, cfg)
 }
 
@@ -111,7 +111,7 @@ func SetDefaultRESTConfig(cfg *rest.Config) { defaultRESTConfig = cfg }
 
 // ResolveRESTConfig returns a rest.Config using the 3-tier precedence:
 //
-//	context (SSE headers) > CLI defaults > nil
+//	context (HTTP headers) > CLI defaults > nil
 func ResolveRESTConfig(ctx context.Context) *rest.Config {
 	if cfg, ok := GetRESTConfig(ctx); ok && cfg != nil {
 		return cfg

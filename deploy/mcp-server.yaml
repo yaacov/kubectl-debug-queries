@@ -1,6 +1,6 @@
 # kubectl-debug-queries MCP Server — OpenShift Deployment
 #
-# Deploys the MCP server Deployment + Service in SSE mode on an OpenShift cluster.
+# Deploys the MCP server Deployment + Service in HTTP mode using Streamable HTTP transport on an OpenShift cluster.
 # Lightspeed integration is handled separately (see deploy/olsconfig-patch.yaml).
 #
 # Quick start:
@@ -20,7 +20,7 @@
 #   The deployment itself has NO RBAC bindings — permissions are entirely
 #   determined by the UI user's own token. No shared credentials.
 #
-# SSE endpoint: http://kubectl-debug-queries-mcp-server.openshift-monitoring.svc:8080/sse
+# HTTP endpoint: http://kubectl-debug-queries-mcp-server.openshift-monitoring.svc:8080/mcp
 # ---
 
 apiVersion: v1
